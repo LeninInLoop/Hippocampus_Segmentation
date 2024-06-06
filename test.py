@@ -84,9 +84,25 @@ def get_random_location(width, height, zoom=1.0):
     return x, y, size
 
 
-def plot_side_by_side(img_arrays):
+def plot_side_by_side(img_arrays, save_path="output.png"):
+    """
+    Plots images side by side and saves the plot to a file.
+
+    Parameters:
+    img_arrays (list of numpy arrays): List of image arrays to plot.
+    save_path (str): Path where the plot will be saved. Defaults to "output.png".
+    """
     flatten_list = [item for sublist in zip(*img_arrays) for item in sublist]
-    plot_img_array(np.array(flatten_list))
+    fig, axes = plt.subplots(nrows=1, ncols=len(flatten_list), figsize=(15, 5))  # Adjust figsize as needed
+
+    for ax, img in zip(axes, flatten_list):
+        ax.imshow(img)
+        ax.axis('off')  # Hide axes
+
+    plt.tight_layout()  # Adjust layout to fit subplots nicely
+    plt.savefig(save_path)  # Save the figure
+    plt.show()  # Display the figure
+
 
 
 def plot_img_array(img_array, ncol=3):
