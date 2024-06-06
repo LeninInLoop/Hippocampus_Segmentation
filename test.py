@@ -266,7 +266,7 @@ def run(UNet):
     optimizer_ft = optim.Adam(filter(lambda p: p.requires_grad, model.parameters()), lr=1e-4)
     exp_lr_scheduler = lr_scheduler.StepLR(optimizer_ft, step_size=30, gamma=0.1)
 
-    model = train_model(model, optimizer_ft, exp_lr_scheduler, num_epochs=5)
+    model = train_model(model, optimizer_ft, exp_lr_scheduler, num_epochs=64)
     model.eval()
 
     trans = transforms.Compose([
