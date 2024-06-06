@@ -1,12 +1,16 @@
-from src.models import Module, Block, MaxPool2d
+from src.models import Module, Conv2d, torch, ConvTranspose2d, functional
 
 
-class DownBlock(Module):
+class DecoderBlock(Module):
     def __init__(self, in_channels, out_channels):
-        super(DownBlock, self).__init__()
-        self.block = Block(in_channels, out_channels)
-        self.pool = MaxPool2d(kernel_size=2, stride=2)
+        super(DecoderBlock, self).__init__()
+        self.upconv = ConvTranspose2d(in_channels, out_channels, kernel_size=2, stride=2)
+        self.conv1 = Conv2d(in_channels, out_channels, kernel_size=3, padding=1)
+        self.conv2 = Conv2d(out_channels, out_channels, kernel_size=3, padding=1)
 
-    def forward(self, x):
-        x_block, x_pooled = self.block(x), self.pool(x)
-        return x_block, x_pooled
+    def forward(self, x, skip_connection):
+        x = self.upconv(x)
+        x = torch.cat([x, skip_connection], dim=1)
+        x = functional.relu(self.conv1(x))
+        x = functional.relu(self.conv2(x))
+        return x
