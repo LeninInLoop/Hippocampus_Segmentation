@@ -8,6 +8,5 @@ class DownBlock(Module):
         self.pool = MaxPool2d(kernel_size=2, stride=2)
 
     def forward(self, x):
-        x = self.block(x)
-        p = self.pool(x)
-        return x, p
+        x_block, x_pooled = self.block(x), self.pool(x)
+        return x_block, x_pooled
