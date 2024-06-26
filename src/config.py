@@ -32,5 +32,5 @@ class Config:
 
     # GPU configuration
     USE_GPU = True
-    NUM_GPUS = 1
-    MEMORY_ALLOC = 0.8
+    USE_GPU_WITH_MORE_MEMORY = True
+    USE_GPU_WITH_MORE_COMPUTE_CAPABILITY = False

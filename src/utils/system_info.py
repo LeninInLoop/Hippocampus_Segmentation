@@ -1,4 +1,4 @@
-from src.models import torch
+import torch
 
 
 class SystemInfo:
@@ -34,15 +34,15 @@ class SystemInfo:
             return False
 
     @staticmethod
-    def get_cuda_device_info() -> list:
+    def get_cuda_devices() -> list:
         device_info = []
         if SystemInfo.is_cuda_available():
             for i in range(SystemInfo.get_cuda_device_count()):
-                device_info.append(SystemInfo._get_cuda_device_info(i))
+                device_info.append(SystemInfo._get_cuda_devices(i))
         return device_info
 
     @staticmethod
-    def _get_cuda_device_info(device_idx) -> dict:
+    def _get_cuda_devices(device_idx) -> dict:
         if SystemInfo.is_cuda_available():
             properties = torch.cuda.get_device_properties(device_idx)
             return {
@@ -57,7 +57,7 @@ class SystemInfo:
         max_compute_capability = 0
         device_idx_with_max_compute_capability = -1
 
-        device_info = SystemInfo.get_cuda_device_info()
+        device_info = SystemInfo.get_cuda_devices()
         for device in device_info:
             compute_capability = device['compute_capability']
             if compute_capability > max_compute_capability:
@@ -65,3 +65,18 @@ class SystemInfo:
                 device_idx_with_max_compute_capability = device['device_id']
 
         return device_idx_with_max_compute_capability
+
+    @staticmethod
+    def get_device_with_highest_memory() -> int:
+        max_memory = 0
+        device_idx_with_max_memory = -1
+
+        device_info = SystemInfo.get_cuda_devices()
+        for device in device_info:
+            memory = device['memory']
+            if memory > max_memory:
+                max_memory = memory
+                device_idx_with_max_memory = device['device_id']
+
+        return device_idx_with_max_memory
+

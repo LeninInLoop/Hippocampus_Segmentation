@@ -1,45 +1,57 @@
-from src.models import Module, ReLU, Conv2d, Sequential, EncoderBlock, DecoderBlock
+from src.models.UNet3D import *
 
 
-class UNet(Module):
-    def __init__(self, n_class):
-        super(UNet, self).__init__()
-        self.enc1 = EncoderBlock(3, 64)
-        self.enc2 = EncoderBlock(64, 128)
-        self.enc3 = EncoderBlock(128, 256)
-        self.enc4 = EncoderBlock(256, 512)
+class UNet3D(nn.Module):
+    def __init__(self, in_channels=1, out_channels=2, feat_channels=32):
+        super().__init__()
 
-        self.center = Sequential(
-            Conv2d(512, 1024, kernel_size=3, padding=1),
-            ReLU(inplace=True),
-            Conv2d(1024, 1024, kernel_size=3, padding=1),
-            ReLU(inplace=True),
-        )
+        # Encoder Block
+        self.down_sample = DownSample()
 
-        self.dec1 = DecoderBlock(1024, 512)
-        self.dec2 = DecoderBlock(512, 256)
-        self.dec3 = DecoderBlock(256, 128)
-        self.dec4 = DecoderBlock(128, 64)
+        self.down_conv1 = InitialConvolutionalLayer(in_channels, feat_channels, feat_channels * 2)
+        self.down_conv2 = DownConvolutionalLayer(feat_channels * 2, feat_channels * 4)
+        self.down_conv3 = DownConvolutionalLayer(feat_channels * 4, feat_channels * 8)
+        self.down_conv4 = DownConvolutionalLayer(feat_channels * 8, feat_channels * 16)
 
-        self.outconv = Conv2d(64, n_class, kernel_size=1)
+        # Decoder Block
+        self.up_sample1 = UpSample(feat_channels * 16, feat_channels * 16)
+        self.up_conv1 = UpConvolutionalLayer(feat_channels * (16 + 8), feat_channels * 8)
 
-    def forward(self, x):
-        # Encoder
-        e1, p1 = self.enc1(x)
-        e2, p2 = self.enc2(p1)
-        e3, p3 = self.enc3(p2)
-        e4, p4 = self.enc4(p3)
+        self.up_sample2 = UpSample(feat_channels * 8, feat_channels * 8)
+        self.up_conv2 = UpConvolutionalLayer(feat_channels * (8 + 4), feat_channels * 4)
 
-        # Center
-        center = self.center(p4)
-
-        # Decoder
-        d1 = self.dec1(center, e4)
-        d2 = self.dec2(d1, e3)
-        d3 = self.dec3(d2, e2)
-        d4 = self.dec4(d3, e1)
+        self.up_sample3 = UpSample(feat_channels * 4, feat_channels * 4)
+        self.up_conv3 = UpConvolutionalLayer(feat_channels * (4 + 2), feat_channels * 2)
 
         # Output layer
-        out = self.outconv(d4)
+        self.final_conv = FinalConvolutionalLayer(feat_channels * 2, out_channels)
+        self.softmax = nn.Softmax(dim=1)
 
-        return out
+    def forward(self, image):
+        init_layer = self.down_conv1(image)
+        down_sample1 = self.down_sample(init_layer)
+
+        down_conv2 = self.down_conv2(down_sample1)
+        down_sample2 = self.down_sample(down_conv2)
+
+        down_conv3 = self.down_conv3(down_sample2)
+        down_sample3 = self.down_sample(down_conv3)
+
+        down_conv4 = self.down_conv4(down_sample3)
+        up_sample1 = self.up_sample1(down_conv4)
+
+        concat1 = ConcatBlock(up_sample1, down_conv3)
+        up_conv1 = self.up_conv1(concat1)
+        up_sample2 = self.up_sample2(up_conv1)
+
+        concat2 = ConcatBlock(up_sample2, down_conv2)
+        up_conv2 = self.up_conv2(concat2)
+        up_sample3 = self.up_sample3(up_conv2)
+
+        concat3 = ConcatBlock(up_sample3, init_layer)
+        up_conv3 = self.up_conv3(concat3)
+
+        final_conv = self.final_conv(up_conv3)
+        return self.softmax(final_conv)
+
+
