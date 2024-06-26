@@ -1,65 +1,80 @@
-import torch
-import torch.nn as nn
+from src.models.UNet3DParts import *
 
 
-def InitialConvolutionalLayer(in_channels, middle_channel, out_channels):
-    conv = nn.Sequential(
-        nn.Conv3d(in_channels=in_channels, out_channels=middle_channel, kernel_size=3, padding=1),
-        nn.ReLU(inplace=False),
-        nn.Conv3d(in_channels=middle_channel, out_channels=out_channels, kernel_size=3, padding=1),
-        nn.ReLU(inplace=False)
-    )
-    return conv
+class UNet3D(nn.Module):
+    def __init__(self, in_channels=1, out_channels=2, feat_channels=32):
+        super().__init__()
+
+        # Encoder Block
+        self.down_sample = DownSample()
+
+        self.down_conv1 = InitialConvolutionalLayer(in_channels, feat_channels, feat_channels * 2)
+        self.down_conv2 = DownConvolutionalLayer(feat_channels * 2, feat_channels * 4)
+        self.down_conv3 = DownConvolutionalLayer(feat_channels * 4, feat_channels * 8)
+        self.down_conv4 = DownConvolutionalLayer(feat_channels * 8, feat_channels * 16)
+
+        # Decoder Block
+        self.up_sample1 = UpSample(feat_channels * 16, feat_channels * 16)
+        self.up_conv1 = UpConvolutionalLayer(feat_channels * (16 + 8), feat_channels * 8)
+
+        self.up_sample2 = UpSample(feat_channels * 8, feat_channels * 8)
+        self.up_conv2 = UpConvolutionalLayer(feat_channels * (8 + 4), feat_channels * 4)
+
+        self.up_sample3 = UpSample(feat_channels * 4, feat_channels * 4)
+        self.up_conv3 = UpConvolutionalLayer(feat_channels * (4 + 2), feat_channels * 2)
+
+        # Output layer
+        self.final_conv = FinalConvolutionalLayer(feat_channels * 2, out_channels)
+        self.softmax = nn.Softmax(dim=1)
+
+    def forward(self, image):
+        init_layer = self.down_conv1(image)
+        down_sample1 = self.down_sample(init_layer)
+
+        down_conv2 = self.down_conv2(down_sample1)
+        down_sample2 = self.down_sample(down_conv2)
+
+        down_conv3 = self.down_conv3(down_sample2)
+        down_sample3 = self.down_sample(down_conv3)
+
+        down_conv4 = self.down_conv4(down_sample3)
+        up_sample1 = self.up_sample1(down_conv4)
+
+        concat1 = ConcatBlock(up_sample1, down_conv3)
+        up_conv1 = self.up_conv1(concat1)
+        up_sample2 = self.up_sample2(up_conv1)
+
+        concat2 = ConcatBlock(up_sample2, down_conv2)
+        up_conv2 = self.up_conv2(concat2)
+        up_sample3 = self.up_sample3(up_conv2)
+
+        concat3 = ConcatBlock(up_sample3, init_layer)
+        up_conv3 = self.up_conv3(concat3)
+
+        final_conv = self.final_conv(up_conv3)
+        return self.softmax(final_conv)
 
 
-def DownSample():
-    return nn.MaxPool3d(kernel_size=2, stride=2)
+# Test
+input_example = torch.rand((4, 1, 64, 64, 64)).cuda()
 
+unet3_d = UNet3D(in_channels=1, out_channels=2, feat_channels=32).cuda()
+output = unet3_d(input_example)
 
-def UpSample(in_channels, out_channels):
-    return nn.ConvTranspose3d(in_channels=in_channels, out_channels=out_channels, kernel_size=2, stride=2)
+expected_output_shape = (4, 2, 64, 64, 64)
+print("Output shape = {}".format(output.shape))
+assert output.shape == expected_output_shape, "Unexpected output shape, check the architecture!"
 
+expected_gt_shape = (4, 64, 64, 64)
+ground_truth = torch.ones(expected_gt_shape)
+ground_truth = ground_truth.long().cuda()
 
-def DownConvolutionalLayer(in_channels, out_channels):
-    # First Implementation (in_channels -> in_channels -> out_channels):
-    #     Preserves more information from the input in the intermediate layer.
-    #     May be beneficial when you want to process the input more before reducing dimensionality.
-    #     Could potentially learn more complex features before reducing the number of channels.
-    #
-    # conv = nn.Sequential(
-    #     nn.Conv3d(in_channels=in_channels, out_channels=in_channels, kernel_size=3, padding=1),
-    #     nn.ReLU(inplace=False),
-    #     nn.Conv3d(in_channels=in_channels, out_channels=out_channels, kernel_size=3, padding=1),
-    #     nn.ReLU(inplace=False)
-    # )
-    # return conv
+# Defining loss fn
+ce_layer = torch.nn.CrossEntropyLoss()
 
-    # Second Implementation (in_channels -> out_channels -> out_channels):
-    #     Reduces the number of channels earlier, which can be computationally more efficient.
-    #     May help in reducing overfitting by limiting the model's capacity earlier in the layer.
-    #     Could be beneficial when you want to quickly transform the input to a different feature space.
-    conv = nn.Sequential(
-        nn.Conv3d(in_channels=in_channels, out_channels=out_channels, kernel_size=3, padding=1),
-        nn.ReLU(inplace=False),
-        nn.Conv3d(in_channels=out_channels, out_channels=out_channels, kernel_size=3, padding=1),
-        nn.ReLU(inplace=False)
-    )
-    return conv
+# Calculating loss
+ce_loss = ce_layer(output, ground_truth)
+print("CE Loss = {}".format(ce_loss))
 
-
-def UpConvolutionalLayer(in_channels, out_channels):
-    conv = nn.Sequential(
-        nn.Conv3d(in_channels=in_channels, out_channels=out_channels, kernel_size=3, padding=1),
-        nn.ReLU(inplace=False),
-        nn.Conv3d(in_channels=out_channels, out_channels=out_channels, kernel_size=3, padding=1),
-        nn.ReLU(inplace=False)
-    )
-    return conv
-
-
-def FinalConvolutionalLayer(in_channels, out_channels):
-    return nn.Conv3d(in_channels=in_channels, out_channels=out_channels, kernel_size=1)
-
-
-def ConcatBlock(x1, x2):
-    return torch.cat((x1, x2), 1)
+# Back propagation
+ce_loss.backward()

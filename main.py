@@ -1,9 +1,5 @@
-from torch import Tensor
-
 from src.utils import SystemInfo
 from src.config import Config
-from src.models.model import UNet3D
-import torch
 
 
 def main():
