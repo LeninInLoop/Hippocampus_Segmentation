@@ -1,3 +1,5 @@
+from torch import Tensor
+
 from src.utils import SystemInfo
 from src.config import Config
 from src.models.model import UNet3D
@@ -36,11 +38,6 @@ def main():
 
                 print(f"Setting current CUDA device to: {device_with_highest_compute}")
                 SystemInfo.set_cuda_device(device_with_highest_compute)
-
-        input_example = torch.rand((4, 1, 64, 64, 64))
-        Unet3D = UNet3D(in_channels=1, out_channels=2, feat_channels=32)
-        output = Unet3D(input_example)
-        print(output.shape)
 
 
 if __name__ == '__main__':
