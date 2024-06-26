@@ -166,3 +166,13 @@ def ConcatBlock(x1, x2):
         torch.Tensor: Concatenated tensor
     """
     return torch.cat((x1, x2), 1)
+
+
+# ReLU(inplace=True/False):
+# - inplace=False (default): Creates a new tensor for the output, preserving the original input.
+#   Safer option, slightly more memory usage.
+# - inplace=True: Modifies the input tensor directly, potentially saving memory.
+#   Use with caution as it changes the original input and may affect the computation graph.
+#
+# In practice, the performance difference is often negligible in modern frameworks.
+# Default (False) is generally recommended unless memory optimization is critical.
