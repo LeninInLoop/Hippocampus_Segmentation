@@ -1,5 +1,6 @@
 from src.utils import SystemInfo
 from src.config import Config
+from src.data import train_loader, val_loader, test_loader
 
 
 def main():
