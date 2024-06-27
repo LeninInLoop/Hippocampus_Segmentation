@@ -1,1 +1,4 @@
-from .system_info import SystemInfo
+from .SystemInfo import SystemInfo
+from .Helper import *
+from .System import System
+

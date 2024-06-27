@@ -1,130 +1,68 @@
-import os
-import json
-import torch
-import nibabel as nib
-from torch.utils.data import Dataset, DataLoader
+from torch.utils.data import random_split, DataLoader
+from src.Config import Config
+from .DataSet import HippocampusDataset
 
 
-class HippocampusDataset(Dataset):
-    def __init__(self, data_dir, json_file, transform=None, mode='train'):
-        """
-        Initializes the HippocampusDataset.
+class DataSetLoader:
+    def __init__(self):
+        self.full_dataset = HippocampusDataset()
+        self.train_dataset, self.val_dataset = self._split_dataset()
+        self.train_loader = self._create_data_loader(self.train_dataset, shuffle=True)
+        self.val_loader = self._create_data_loader(self.val_dataset, shuffle=False)
 
-        This constructor sets up the dataset by loading the JSON file and preparing
-        the data list based on the specified mode (train or test).
+    # Explanation: The __init__ method sets up the entire data pipeline:
+    # 1. It creates the full dataset
+    # 2. Splits it into training and validation sets
+    # 3. Creates DataLoaders for both sets
+    # This encapsulation makes it easy to manage the entire data loading process.
 
-        Args:
-            data_dir (str): Path to the directory containing the dataset
-            json_file (str): Name of the JSON file with dataset information
-            transform (callable, optional): Optional transform to be applied on a sample
-            mode (str): 'train' for training data, 'test' for test data
+    def _split_dataset(self):
+        total_size = len(self.full_dataset)
+        train_size = int(Config.TRAIN_SPLIT_RATIO * total_size)
+        val_size = total_size - train_size
+        return random_split(self.full_dataset, [train_size, val_size])
 
-        Raises:
-            ValueError: If mode is neither 'train' nor 'test'
-        """
-        self.data_dir = data_dir
-        self.transform = transform
-        self.mode = mode
-
-        # Load the JSON file
-        with open(os.path.join(data_dir, json_file), 'r') as f:
-            self.data_json = json.load(f)
-
-        if mode == 'train':
-            self.data_list = self.data_json['training']
-        elif mode == 'test':
-            self.data_list = self.data_json['test']
-        else:
-            raise ValueError("Mode must be either 'train' or 'test'")
-
-    def __len__(self):
-        """
-        Returns the number of samples in the dataset.
-
-        This method is required for PyTorch datasets and is used by DataLoader
-        to determine the number of batches.
-
-        Returns:
-            int: The total number of samples in the dataset
-        """
-        return len(self.data_list)
-
-    def __getitem__(self, idx):
-        """
-        Fetches and processes a single sample from the dataset.
-
-        This method loads an image (and label for training mode) from the disk,
-        applies necessary preprocessing, and returns the data in the format
-        required by the model.
-
-        Args:
-            idx (int): Index of the sample to fetch
-
-        Returns:
-            tuple: (image, label) for training mode, (image,) for test mode
-                   image is a normalized 3D tensor, label is a 3D tensor of integers
-        """
-        if self.mode == 'train':
-            img_path = os.path.join(self.data_dir, self.data_list[idx]['image'][2:])  # Remove './' from the start
-            label_path = os.path.join(self.data_dir, self.data_list[idx]['label'][2:])  # Remove './' from the start
-        else:  # test mode
-            img_path = os.path.join(self.data_dir, self.data_list[idx][2:])  # Remove './' from the start
-            label_path = None
-
-        # Load image
-        image = nib.load(img_path).get_fdata()
-
-        # Normalize image (assuming MRI intensity values)
-        image = (image - image.min()) / (image.max() - image.min())
-
-        # Convert image to torch tensor
-        image = torch.from_numpy(image).float().unsqueeze(0)  # Add channel dimension
-
-        if self.transform:
-            image = self.transform(image)
-
-        if self.mode == 'train':
-            # Load and process label
-            label = nib.load(label_path).get_fdata()
-            label = torch.from_numpy(label).long()
-            return image, label
-        else:
-            # For test mode, return only the image
-            return image
+    # Explanation: This method splits the dataset into training and validation sets.
+    # It uses PyTorch's random_split function, which ensures a random division of the data.
+    # The split ratio is defined in the Config, allowing for easy adjustment.
 
     @staticmethod
-    def get_data_loaders(data_dir, json_file, batch_size=4, num_workers=4):
-        """
-        Creates DataLoader objects for training, validation, and testing.
+    def _create_data_loader(dataset, shuffle):
+        return DataLoader(
+            dataset,
+            batch_size=Config.BATCH_SIZE,
+            shuffle=shuffle,
+            num_workers=Config.NUM_WORKERS
+        )
 
-        This method sets up the complete data pipeline, including:
-        - Creating separate datasets for training and testing
-        - Splitting the training data into training and validation subsets
-        - Creating DataLoader objects with specified batch size and number of workers
+    # Explanation: This method creates a DataLoader for a given dataset.
+    # - It uses the batch size and number of workers defined in Config.
+    # - Shuffling is optional, typically used for the training set but not for validation.
 
-        Args:
-            data_dir (str): Path to the directory containing the dataset
-            json_file (str): Name of the JSON file with dataset information
-            batch_size (int): Number of samples per batch
-            num_workers (int): Number of subprocesses to use for data loading
+    # Comparison:
+    # Using DataLoader vs. manual batching:
+    # Advantages of DataLoader:
+    # - Efficient data loading with multi-processing
+    # - Automatic batching and shuffling
+    # - Easily configurable (e.g., batch size, shuffling, num_workers)
+    # Disadvantages:
+    # - Slight overhead for very small datasets
+    # - May require careful tuning of num_workers for optimal performance
 
-        Returns:
-            tuple: (train_loader, val_loader, test_loader)
-                   Each loader is a PyTorch DataLoader object
-        """
-        train_dataset = HippocampusDataset(data_dir, json_file, mode='train')
+    def get_train_loader(self):
+        return self.train_loader
 
-        # Split into train and validation sets
-        train_size = int(0.8 * len(train_dataset))
-        val_size = len(train_dataset) - train_size
-        train_subset, val_subset = torch.utils.data.random_split(train_dataset, [train_size, val_size])
+    def get_val_loader(self):
+        return self.val_loader
 
-        train_loader = DataLoader(train_subset, batch_size=batch_size, shuffle=True, num_workers=num_workers)
-        val_loader = DataLoader(val_subset, batch_size=batch_size, shuffle=False, num_workers=num_workers)
+    # Explanation: These getter methods provide access to the train and validation loaders.
+    # They encapsulate the data loading process, allowing other parts of the code to easily
+    # access the prepared data without needing to know the details of how it was set up.
 
-        # Create test loader
-        test_dataset = HippocampusDataset(data_dir, json_file, mode='test')
-        test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers)
+# Overall explanation:
+# This DataSetLoader class provides a clean, encapsulated way to handle the entire
+# data loading process for a deep learning model. It separates the concerns of
+# dataset creation, splitting, and loading, making the code more modular and easier to maintain.
 
-        return train_loader, val_loader, test_loader
-
+# The use of a Config class for parameters like batch size and split ratio
+# makes it easy to adjust these values without changing the core logic.
