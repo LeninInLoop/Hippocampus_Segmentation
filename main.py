@@ -1,8 +1,6 @@
 from src.utils import SystemInfo, print_dataset_info, print_cuda_device_info, System
 from src.Config import Config
-from src.data import DataSetLoader
-
-import torch
+from src.data import dataset
 
 
 def main():
@@ -31,7 +29,7 @@ def main():
 if __name__ == '__main__':
     main()
 
-    dataset = DataSetLoader()
+
     train_loader = dataset.get_train_loader()
 
     for batch_images, batch_labels in train_loader:

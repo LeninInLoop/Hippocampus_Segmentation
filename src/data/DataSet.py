@@ -1,77 +1,44 @@
-import json
-import os
-import torch
-from torch.utils.data import Dataset
-import nibabel as nib
-from src.Config import Config
-import numpy as np
+from src.data import *
 
-
-def pad_to_size(image, target_shape=(64, 64, 64)):
-    # Get the current shape
-    current_shape = image.shape
-
-    # Calculate padding
-    pad_width = [(0, max(target_shape[i] - current_shape[i], 0)) for i in range(3)]
-
-    # Pad the image
-    padded_image = np.pad(image, pad_width, mode='constant', constant_values=0)
-
-    # Crop if necessary (in case the original image is larger than target in any dimension)
-    cropped_image = padded_image[:target_shape[0], :target_shape[1], :target_shape[2]]
-
-    return cropped_image
-
-
-# Explanation: This function pads (or crops) an input image to a target shape.
-# It's crucial for ensuring all images have the same dimensions, which is
-# necessary for batch processing in neural networks. The padding is done with
-# zeros, and if the original image is larger, it's cropped to fit.
 
 class HippocampusDataset(Dataset):
     def __init__(self, json_file=Config.DATA_JSON, root_dir=Config.DATA_DIR, transform=None):
         with open(json_file, "r") as file:
             self.json_data = json.load(file)
-
         self.train_data = self.json_data["training"]
         self.root_dir = root_dir
         self.transform = transform
-
-        self.images = [item["image"][2:] for item in self.train_data]
-        self.labels = [item["label"][2:] for item in self.train_data]
-
-    # Explanation: The __init__ method sets up the dataset. It loads the JSON file
-    # containing image and label paths, and stores these paths for later use.
-    # The [2:] slicing removes the './' prefix from the file paths if present.
+        self.images = [item["image"].lstrip('./') for item in self.train_data]
+        self.labels = [item["label"].lstrip('./') for item in self.train_data]
 
     def __len__(self):
         return len(self.images)
-
-    # Explanation: __len__ returns the number of samples in the dataset.
-    # This is used by PyTorch's DataLoader to know how many batches to create.
 
     def __getitem__(self, idx):
         img_path = os.path.join(self.root_dir, self.images[idx])
         label_path = os.path.join(self.root_dir, self.labels[idx])
 
-        # Load image and label
-        image = nib.load(img_path).get_fdata()
-        label = nib.load(label_path).get_fdata()
-
-        # Pad (and potentially crop) image and label
-        image_padded = pad_to_size(image)
-        label_padded = pad_to_size(label)
-
-        # Normalize image
-        image_padded = (image_padded - image_padded.min()) / (image_padded.max() - image_padded.min())
-
-        # Add channel dimension
-        image_padded = np.expand_dims(image_padded, axis=0)
+        image = self.load_and_preprocess(img_path)
+        label = self.load_and_preprocess(label_path, is_label=True)
 
         if self.transform:
-            image_padded = self.transform(image_padded)
+            image = self.transform(image)
 
-        return torch.from_numpy(image_padded).float(), torch.from_numpy(label_padded).long()
+        return torch.from_numpy(image).float(), torch.from_numpy(label).long()
+
+    def load_and_preprocess(self, file_path, is_label=False):
+        data = nib.load(file_path).get_fdata()
+        padded_data = pad_to_size(data)
+
+        if not is_label:
+            padded_data = self.normalize(padded_data)
+            padded_data = np.expand_dims(padded_data, axis=0)  # Add channel dimension
+
+        return padded_data
+
+    @staticmethod
+    def normalize(image):
+        return (image - image.min()) / (image.max() - image.min())
 
     # Explanation: __getitem__ is crucial. It's called by the DataLoader to fetch
     # individual samples. Here's what it does:

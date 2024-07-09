@@ -21,3 +21,5 @@ def print_cuda_device_info(cuda_devices):
         print(f"Device Memory: {device['memory']}")
         print(f"Device Compute Capability: {device['compute_capability']}")
     print("----------------------------------------------------------\n")
+
+

@@ -1,5 +1,4 @@
-import torch
-import torch.nn as nn
+from src.models import *
 
 
 def InitialConvolutionalLayer(in_channels, middle_channel, out_channels):

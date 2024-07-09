@@ -1,6 +1,4 @@
-from torch.utils.data import random_split, DataLoader
-from src.Config import Config
-from .DataSet import HippocampusDataset
+from src.data import *
 
 
 class DataSetLoader:

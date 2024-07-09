@@ -55,26 +55,26 @@ class UNet3D(nn.Module):
         return self.softmax(final_conv)
 
 
-# Test
-input_example = torch.rand((4, 1, 64, 64, 64)).cuda()
-
-unet3_d = UNet3D(in_channels=1, out_channels=2, feat_channels=32).cuda()
-output = unet3_d(input_example)
-
-expected_output_shape = (4, 2, 64, 64, 64)
-print("Output shape = {}".format(output.shape))
-assert output.shape == expected_output_shape, "Unexpected output shape, check the architecture!"
-
-expected_gt_shape = (4, 64, 64, 64)
-ground_truth = torch.ones(expected_gt_shape)
-ground_truth = ground_truth.long().cuda()
-
-# Defining loss fn
-ce_layer = torch.nn.CrossEntropyLoss()
-
-# Calculating loss
-ce_loss = ce_layer(output, ground_truth)
-print("CE Loss = {}".format(ce_loss))
-
-# Back propagation
-ce_loss.backward()
+# # Test
+# input_example = torch.rand((4, 1, 64, 64, 64)).cuda()
+#
+# unet3_d = UNet3D(in_channels=1, out_channels=2, feat_channels=32).cuda()
+# output = unet3_d(input_example)
+#
+# expected_output_shape = (4, 2, 64, 64, 64)
+# print("Output shape = {}".format(output.shape))
+# assert output.shape == expected_output_shape, "Unexpected output shape, check the architecture!"
+#
+# expected_gt_shape = (4, 64, 64, 64)
+# ground_truth = torch.ones(expected_gt_shape)
+# ground_truth = ground_truth.long().cuda()
+#
+# # Defining loss fn
+# ce_layer = torch.nn.CrossEntropyLoss()
+#
+# # Calculating loss
+# ce_loss = ce_layer(output, ground_truth)
+# print("CE Loss = {}".format(ce_loss))
+#
+# # Back propagation
+# ce_loss.backward()
