@@ -1,4 +1,4 @@
-from src.train.Train import Train
+from src.train import *
 from src.utils import *
 from src.Config import Config
 from src.data import dataset
@@ -62,9 +62,40 @@ def main():
 
         print(len(val_loader.dataset))
 
+        unet3_d = UNet3D(in_channels=1, out_channels=2, feat_channels=32).cuda()
+
+        # Iterate over the train_loader to get batches
+        for batch_images, batch_labels in train_loader:
+            # Move batch to GPU if using CUDA
+            batch_images = batch_images.cuda()
+            batch_labels = batch_labels.cuda()
+
+            print("Unique values in batch_labels:", torch.unique(batch_labels))
+            print("Minimum value in batch_labels:", batch_labels.min().item())
+            print("Maximum value in batch_labels:", batch_labels.max().item())
+
+            # Forward pass
+            outputs = unet3_d(batch_images)
+
+            print("Output shape =", outputs.shape)
+            print("Batch labels shape =", batch_labels.shape)
+
+            # Calculating loss using the custom dice loss
+            loss = get_multi_dice_loss(outputs, batch_labels, device=batch_images.device)
+            print("Dice Loss =", loss.item())
+
+            # Back propagation
+            loss.backward()
+
+            # Here you would typically update the model parameters using an optimizer
+            # optimizer.step()
+            # optimizer.zero_grad()
+
+            break  # Remove this if you want to process all batches
+
         # Create Train instance and start training
-        trainer = Train(model, device, train_loader, val_loader, optimizer, criterion, scheduler)
-        trainer.start_training()
+        # trainer = Train(model, device, train_loader, val_loader, optimizer, criterion, scheduler)
+        # trainer.start_training()
 
         # train_data, val_data, test_data = HippocampusDataset.get_data_loaders()
         # print(train_data)
