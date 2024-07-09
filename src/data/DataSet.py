@@ -1,8 +1,13 @@
+import os.path
+
 from src.data import *
 
 
 class HippocampusDataset(Dataset):
     def __init__(self, json_file=Config.DATA_JSON, root_dir=Config.DATA_DIR, transform=None):
+        if not os.path.isdir(root_dir):
+            print("dataset not found: Start Downloading....")
+            download_dataset()
         with open(json_file, "r") as file:
             self.json_data = json.load(file)
         self.train_data = self.json_data["training"]
