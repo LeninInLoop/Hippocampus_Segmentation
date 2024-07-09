@@ -1,9 +1,10 @@
+import os.path
+
 from src.train import *
 
 
 class Train:
-    def __init__(self, model, device, train_loader, val_loader, optimizer, criterion, scheduler, config,
-                 logs_folder=None):
+    def __init__(self, model, device, train_loader, val_loader, optimizer, criterion, scheduler):
         self.model = model
         self.device = device
         self.train_loader = train_loader
@@ -11,8 +12,12 @@ class Train:
         self.optimizer = optimizer
         self.criterion = criterion
         self.scheduler = scheduler
-        self.config = config
-        self.logs_folder = logs_folder
+
+        if not os.path.isdir(Config.LOGS_FOLDER):
+            split_logs_folder = Config.LOGS_FOLDER.split('/')
+            if not os.path.exists(split_logs_folder[0]):
+                os.mkdir(split_logs_folder[0])
+            os.mkdir(Config.LOGS_FOLDER)
 
     def train_epoch(self):
         self.model.train()
@@ -33,8 +38,7 @@ class Train:
 
             total_loss += loss.item()
 
-            if (i + 1) % 10 == 0:  # Print every 10 batches
-                print(f'    Batch {i + 1}/{len(self.train_loader)}, Loss: {loss.item():.4f}')
+            print(f'    Batch {i + 1}/{len(self.train_loader)}, Loss: {loss.item():.4f}')
 
         return total_loss / len(self.train_loader)
 
@@ -54,10 +58,10 @@ class Train:
 
     def start_training(self):
         best_val_loss = float('inf')
-        for epoch in range(self.config.NUM_EPOCHS):
+        for epoch in range(Config.NUM_EPOCHS):
             epoch_start_time = time.time()
 
-            print(f"Epoch {epoch + 1}/{self.config.NUM_EPOCHS}")
+            print(f"Epoch {epoch + 1}/{Config.NUM_EPOCHS}")
 
             train_loss = self.train_epoch()
             val_loss = self.validate()
@@ -77,13 +81,13 @@ class Train:
             # Save best model
             if val_loss < best_val_loss:
                 best_val_loss = val_loss
-                if self.logs_folder is not None:
-                    checkpoint_path = os.path.join(self.logs_folder, 'best_model.pth')
+                if Config.LOGS_FOLDER is not None:
+                    checkpoint_path = os.path.join(Config.LOGS_FOLDER, 'best_model.pth')
                     torch.save(self.model.state_dict(), checkpoint_path)
 
             # Save checkpoint every 'val_epochs'
-            if (epoch + 1) % self.config.val_epochs == 0 and self.logs_folder is not None:
-                checkpoint_path = os.path.join(self.logs_folder, f'model_epoch_{epoch + 1:04d}.pth')
+            if (epoch + 1) % Config.VAL_EPOCHS == 0 and Config.LOGS_FOLDER is not None:
+                checkpoint_path = os.path.join(Config.LOGS_FOLDER, f'model_epoch_{epoch + 1:04d}.pth')
                 torch.save(self.model.state_dict(), checkpoint_path)
 
         print('Training ended!')

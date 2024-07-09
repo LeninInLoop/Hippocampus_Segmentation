@@ -8,6 +8,7 @@ class Config:
     BATCH_SIZE = 16
     NUM_WORKERS = 4
     NUM_EPOCHS = 20
+    VAL_EPOCHS = 4
     LEARNING_RATE = 0.01
     WEIGHT_DECAY = 1e-5
 
@@ -31,3 +32,4 @@ class Config:
 
     # Model saving
     MODEL_SAVE_PATH = DATA_DIR + r"\Output\best_unet3d_model.pth"
+    LOGS_FOLDER = r"Output\logs"

@@ -1,16 +1,14 @@
-import torch
+from src.utils import *
 
 
 def dice(outputs, labels):
     eps = 1e-5
     outputs, labels = outputs.float(), labels.float()
-    # Flatten all dimensions except the batch dimension
-    outputs = outputs.view(outputs.size(0), -1)
-    labels = labels.view(labels.size(0), -1)
-    intersect = (outputs * labels).sum(dim=1)
-    union = outputs.sum(dim=1) + labels.sum(dim=1)
+    outputs, labels = outputs.flatten(), labels.flatten()
+    intersect = torch.dot(outputs, labels)
+    union = torch.add(torch.sum(outputs), torch.sum(labels))
     dice_coeff = (2 * intersect + eps) / (union + eps)
-    dice_loss = 1 - dice_coeff.mean()
+    dice_loss = - dice_coeff + 1
     return dice_loss
 
 
@@ -34,6 +32,18 @@ def one_hot_encode(label, num_classes):
 
 
 def dice_n_classes(outputs, labels, do_one_hot=False, get_list=False, device=None):
+    """
+    Computes the Multi-class classification Dice Coefficient.
+    It is computed as the average Dice for all classes, each time
+    considering a class versus all the others.
+    Class 0 (background) is not considered in the average.
+    :param outputs: probabilities outputs of the CNN. Shape: [BxKxHxW]
+    :param labels:  ground truth                      Shape: [BxKxHxW]
+    :param do_one_hot: set to True if ground truth has shape [BxHxW]
+    :param get_list:   set to True if you want the list of dices per class instead of average
+    :param device: CUDA device on which compute the dice
+    :return: Multiclass classification Dice Loss
+    """
     num_classes = outputs.shape[1]
     if do_one_hot:
         labels = one_hot_encode(labels, num_classes)
@@ -51,7 +61,6 @@ def dice_n_classes(outputs, labels, do_one_hot=False, get_list=False, device=Non
         return sum(dices) / (num_classes - 1)
 
 
-def get_multi_dice_loss():
-    def loss_fn(outputs, labels, device=None):
-        return dice_n_classes(outputs, labels, do_one_hot=True, get_list=False, device=device)
-    return loss_fn
+def get_multi_dice_loss(outputs, labels, device=None):
+    labels = labels[:, 0]
+    return dice_n_classes(outputs, labels, do_one_hot=True, get_list=False, device=device)
