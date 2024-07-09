@@ -24,19 +24,25 @@ class HippocampusDataset(Dataset):
         image = self.load_and_preprocess(img_path)
         label = self.load_and_preprocess(label_path, is_label=True)
 
+        # Apply transformations
         if self.transform:
             image = self.transform(image)
+
+        # Ensure padding
+        image = pad_3d_image(image, zero_pad=False, pad_ref=Config.PADDING_TARGET_SHAPE)
+        label = pad_3d_image(label, zero_pad=True, pad_ref=Config.PADDING_TARGET_SHAPE)
 
         return torch.from_numpy(image).float(), torch.from_numpy(label).long()
 
     def load_and_preprocess(self, file_path, is_label=False):
         data = nib.load(file_path).get_fdata()
-        padded_data = pad_to_size(data)
+        padded_data = pad_3d_image(data)
 
         if not is_label:
             padded_data = self.normalize(padded_data)
             padded_data = np.expand_dims(padded_data, axis=0)  # Add channel dimension
-
+        else:
+            padded_data = np.expand_dims(padded_data, axis=0)  # Add channel dimension
         return padded_data
 
     @staticmethod

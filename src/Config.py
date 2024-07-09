@@ -10,20 +10,12 @@ class Config:
     NUM_EPOCHS = 20
     VAL_EPOCHS = 4
     LEARNING_RATE = 0.01
-    WEIGHT_DECAY = 1e-5
 
     # Optimizer settings
-    OPTIMIZER = 'Adam'  # 'Adam' or 'SGD'
-    MOMENTUM = 0.9  # Only used if OPTIMIZER is 'SGD'
-
-    # Learning rate scheduler settings
-    LR_SCHEDULER = 'ReduceLROnPlateau'  # 'StepLR' or 'ReduceLROnPlateau'
-    LR_STEP_SIZE = 30
-    LR_GAMMA = 0.1
-    LR_PATIENCE = 5  # Only used if LR_SCHEDULER is 'ReduceLROnPlateau'
+    OPTIMIZER = 'Adam'
 
     # Data preprocessing settings
-    PADDING_TARGET_SHAPE = (64, 64, 64)
+    PADDING_TARGET_SHAPE = (48, 64, 48)
 
     # GPU configuration
     USE_GPU = True

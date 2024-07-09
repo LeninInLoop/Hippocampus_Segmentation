@@ -1,17 +1,14 @@
 import os.path
-
 from src.train import *
 
 
 class Train:
-    def __init__(self, model, device, train_loader, val_loader, optimizer, criterion, scheduler):
+    def __init__(self, model, device, train_loader, val_loader, optimizer):
         self.model = model
         self.device = device
         self.train_loader = train_loader
         self.val_loader = val_loader
         self.optimizer = optimizer
-        self.criterion = criterion
-        self.scheduler = scheduler
 
         if not os.path.isdir(Config.LOGS_FOLDER):
             split_logs_folder = Config.LOGS_FOLDER.split('/')
@@ -22,22 +19,17 @@ class Train:
     def train_epoch(self):
         self.model.train()
         total_loss = 0
+        self.optimizer.zero_grad()
         for i, (batch_images, batch_labels) in enumerate(self.train_loader):
             batch_images = batch_images.to(self.device)
             batch_labels = batch_labels.to(self.device)
 
-            self.optimizer.zero_grad()
             outputs = self.model(batch_images)
-            loss = self.criterion(outputs, batch_labels, device=self.device)
+            loss = get_multi_dice_loss(outputs, batch_labels, device=self.device)
             loss.backward()
-
-            # Gradient clipping
-            torch.nn.utils.clip_grad_norm_(self.model.parameters(), max_norm=1.0)
-
             self.optimizer.step()
 
             total_loss += loss.item()
-
             print(f'    Batch {i + 1}/{len(self.train_loader)}, Loss: {loss.item():.4f}')
 
         return total_loss / len(self.train_loader)
@@ -51,7 +43,7 @@ class Train:
                 batch_labels = batch_labels.to(self.device)
 
                 outputs = self.model(batch_images)
-                loss = self.criterion(outputs, batch_labels, device=self.device)
+                loss = get_multi_dice_loss(outputs, batch_labels, device=self.device)
 
                 total_loss += loss.item()
         return total_loss / len(self.val_loader)
@@ -72,11 +64,6 @@ class Train:
             print(f"Train Loss: {train_loss:.4f}")
             print(f"Val Loss: {val_loss:.4f}")
             print(f"Time: {epoch_elapsed_time:.1f} seconds")
-
-            if isinstance(self.scheduler, torch.optim.lr_scheduler.ReduceLROnPlateau):
-                self.scheduler.step(val_loss)
-            else:
-                self.scheduler.step()
 
             # Save best model
             if val_loss < best_val_loss:

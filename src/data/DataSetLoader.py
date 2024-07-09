@@ -3,8 +3,20 @@ from src.data import *
 
 class DataSetLoader:
     def __init__(self):
-        self.full_dataset = HippocampusDataset()
+        train_transform = Compose([
+            ZNormalization(),
+            # Add more transformations for training if needed
+        ])
+        val_transform = Compose([
+            ZNormalization(),
+        ])
+
+        self.full_dataset = HippocampusDataset(transform=train_transform)
         self.train_dataset, self.val_dataset = self._split_dataset()
+
+        # Apply different transforms to validation set
+        self.val_dataset.dataset.transform = val_transform
+
         self.train_loader = self._create_data_loader(self.train_dataset, shuffle=True)
         self.val_loader = self._create_data_loader(self.val_dataset, shuffle=False)
 
