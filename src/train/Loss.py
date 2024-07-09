@@ -34,19 +34,15 @@ def one_hot_encode(label, num_classes):
 
 
 def dice_n_classes(outputs, labels, do_one_hot=False, get_list=False, device=None):
-    print("In dice_n_classes - outputs shape:", outputs.shape)
-    print("In dice_n_classes - labels shape:", labels.shape)
     num_classes = outputs.shape[1]
     if do_one_hot:
         labels = one_hot_encode(labels, num_classes)
         labels = labels.cuda(device=device)
-    print("After one-hot encoding - labels shape:", labels.shape)
 
     dices = list()
     for cls in range(1, num_classes):
         outputs_ = outputs[:, cls].unsqueeze(dim=1)
         labels_ = labels[:, cls].unsqueeze(dim=1)
-        print(f"Class {cls} - outputs_ shape: {outputs_.shape}, labels_ shape: {labels_.shape}")
         dice_ = dice(outputs_, labels_)
         dices.append(dice_)
     if get_list:
@@ -55,5 +51,7 @@ def dice_n_classes(outputs, labels, do_one_hot=False, get_list=False, device=Non
         return sum(dices) / (num_classes - 1)
 
 
-def get_multi_dice_loss(outputs, labels, device=None):
-    return dice_n_classes(outputs, labels, do_one_hot=True, get_list=False, device=device)
+def get_multi_dice_loss():
+    def loss_fn(outputs, labels, device=None):
+        return dice_n_classes(outputs, labels, do_one_hot=True, get_list=False, device=device)
+    return loss_fn

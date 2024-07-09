@@ -16,10 +16,10 @@ class Config:
     MOMENTUM = 0.9  # Only used if OPTIMIZER is 'SGD'
 
     # Learning rate scheduler settings
-    LR_SCHEDULER = 'StepLR'  # 'StepLR' or 'ReduceLROnPlateau'
+    LR_SCHEDULER = 'ReduceLROnPlateau'  # 'StepLR' or 'ReduceLROnPlateau'
     LR_STEP_SIZE = 30
     LR_GAMMA = 0.1
-    LR_PATIENCE = 10  # Only used if LR_SCHEDULER is 'ReduceLROnPlateau'
+    LR_PATIENCE = 5  # Only used if LR_SCHEDULER is 'ReduceLROnPlateau'
 
     # Data preprocessing settings
     PADDING_TARGET_SHAPE = (64, 64, 64)

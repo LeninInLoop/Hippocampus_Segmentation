@@ -23,11 +23,13 @@ def main():
         if Config.USE_GPU_WITH_MORE_COMPUTE_CAPABILITY:
             System.set_cuda_device_with_highest_compute(cuda_devices)
 
+        device = torch.device("cuda")
+
         # Initialize the model
-        model = UNet3D().to(device)
+        model = UNet3D(in_channels=1, out_channels=3, feat_channels=32).to(device)
 
         # Define loss function
-        criterion = nn.CrossEntropyLoss()
+        criterion = get_multi_dice_loss()
 
         # Define optimizer
         if Config.OPTIMIZER == 'Adam':
@@ -35,6 +37,8 @@ def main():
         elif Config.OPTIMIZER == 'SGD':
             optimizer = optim.SGD(model.parameters(), lr=Config.LEARNING_RATE, momentum=Config.MOMENTUM,
                                   weight_decay=Config.WEIGHT_DECAY)
+        else:
+            raise ValueError(f"Unsupported optimizer: {Config.OPTIMIZER}")
 
         # Define learning rate scheduler
         if Config.LR_SCHEDULER == 'StepLR':
@@ -45,22 +49,23 @@ def main():
         else:
             raise ValueError(f"Unsupported learning rate scheduler: {Config.LR_SCHEDULER}")
 
+        # Get data loaders
         train_loader = dataset.get_train_loader()
-
-        for batch_images, batch_labels in train_loader:
-            print(f"Batch image shape: {batch_images.shape}")
-            print(f"Batch label shape: {batch_labels.shape}")
-            break  # Just print the first batch and exit the loop
-
-        print(len(train_loader.dataset))
-
         val_loader = dataset.get_val_loader()
-        for batch_images, batch_labels in val_loader:
-            print(f"Batch image shape: {batch_images.shape}")
-            print(f"Batch label shape: {batch_labels.shape}")
-            break  # Just print the first batch and exit the loop
 
-        print(len(val_loader.dataset))
+        # Print sample batch shapes
+        for batch_images, batch_labels in train_loader:
+            print(f"Train batch image shape: {batch_images.shape}")
+            print(f"Train batch label shape: {batch_labels.shape}")
+            break
+
+        for batch_images, batch_labels in val_loader:
+            print(f"Val batch image shape: {batch_images.shape}")
+            print(f"Val batch label shape: {batch_labels.shape}")
+            break
+
+        print(f"Number of training samples: {len(train_loader.dataset)}")
+        print(f"Number of validation samples: {len(val_loader.dataset)}")
 
         # Create Train instance and start training
         trainer = Train(model, device, train_loader, val_loader, optimizer, criterion, scheduler)
