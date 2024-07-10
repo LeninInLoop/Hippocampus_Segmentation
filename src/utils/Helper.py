@@ -1,25 +1,49 @@
-
 def print_dataset_info(data_json):
-    print(f"Dataset Name: {data_json['name']}")
-    print(f"Description: {data_json['description']}")
-    print(f"Reference: {data_json['reference']}")
-    print(f"Licence: {data_json['licence']}")
-    print(f"Release Version: {data_json['relase']}")
-    print(f"Tensor Image Size: {data_json['tensorImageSize']}")
-    print(f"Modality: {data_json['modality']['0']}")
-    print(f"Number of Training Images: {data_json['numTraining']}")
-    print(f"Number of Test Images: {data_json['numTest']}\n")
+    """
+    Print formatted information about the dataset.
+
+    Args:
+        data_json (dict): A dictionary containing dataset information.
+    """
+    info_items = [
+        ("Dataset Name", data_json['name']),
+        ("Description", data_json['description']),
+        ("Reference", data_json['reference']),
+        ("Licence", data_json['licence']),
+        ("Release Version", data_json['relase']),
+        ("Tensor Image Size", data_json['tensorImageSize']),
+        ("Modality", data_json['modality']['0']),
+        ("Number of Training Images", data_json['numTraining']),
+        ("Number of Test Images", data_json['numTest'])
+    ]
+
+    for label, value in info_items:
+        print(f"{label}: {value}")
+    print()
 
 
 def print_cuda_device_info(cuda_devices):
+    """
+    Print formatted information about CUDA devices.
+
+    Args:
+        cuda_devices (list): A list of dictionaries containing CUDA device information.
+    """
     print("CUDA devices are shown below:")
-    print("----------------------------------------------------------")
-    for index, device in enumerate(cuda_devices):
-        print(f"Device {index + 1}/{len(cuda_devices)}")
-        print(f"Device ID: {device['device_id']}")
-        print(f"Device Name: {device['name']}")
-        print(f"Device Memory: {device['memory']}")
-        print(f"Device Compute Capability: {device['compute_capability']}")
-    print("----------------------------------------------------------\n")
+    print("-" * 58)
 
+    for index, device in enumerate(cuda_devices, 1):
+        print(f"Device {index}/{len(cuda_devices)}")
+        device_info = [
+            ("Device ID", device['device_id']),
+            ("Device Name", device['name']),
+            ("Device Memory", device['memory']),
+            ("Device Compute Capability", device['compute_capability'])
+        ]
+        for label, value in device_info:
+            print(f"  {label}: {value}")
+        if index < len(cuda_devices):
+            print()  # Add a blank line between devices, except for the last one
 
+    print("-" * 58)
+    print()

@@ -1,66 +1,84 @@
+from typing import Union, List
 from src.utils import *
 
 
-def dice(outputs, labels):
-    eps = 1e-5
-    outputs, labels = outputs.float(), labels.float()
-    outputs, labels = outputs.flatten(), labels.flatten()
-    intersect = torch.dot(outputs, labels)
-    union = torch.add(torch.sum(outputs), torch.sum(labels))
-    dice_coeff = (2 * intersect + eps) / (union + eps)
-    dice_loss = - dice_coeff + 1
-    return dice_loss
-
-
-def one_hot_encode(label, num_classes):
-    """ Torch One Hot Encode
-    :param label: Tensor of shape BxHxW or BxDxHxW
-    :param num_classes: K classes
-    :return: label_ohe, Tensor of shape BxKxHxW or BxKxDxHxW
+def dice_coefficient(outputs: torch.Tensor, labels: torch.Tensor) -> torch.Tensor:
     """
-    assert len(label.shape) == 3 or len(label.shape) == 4, 'Invalid Label Shape {}'.format(label.shape)
-    label_ohe = None
-    if len(label.shape) == 3:
-        label_ohe = torch.zeros((label.shape[0], num_classes, label.shape[1], label.shape[2]))
-    elif len(label.shape) == 4:
-        label_ohe = torch.zeros((label.shape[0], num_classes, label.shape[1], label.shape[2], label.shape[3]))
+    Calculate the Dice coefficient between outputs and labels.
+
+    Args:
+        outputs (torch.Tensor): Predicted outputs.
+        labels (torch.Tensor): Ground truth labels.
+
+    Returns:
+        torch.Tensor: Dice loss (1 - Dice coefficient).
+    """
+    eps = 1e-5
+    outputs, labels = outputs.float().flatten(), labels.float().flatten()
+    intersect = torch.dot(outputs, labels)
+    union = torch.sum(outputs) + torch.sum(labels)
+    dice = (2 * intersect + eps) / (union + eps)
+    return 1 - dice
+
+
+def one_hot_encode(label: torch.Tensor, num_classes: int) -> torch.Tensor:
+    """
+    Perform one-hot encoding on the input label tensor.
+
+    Args:
+        label (torch.Tensor): Input label tensor of shape BxHxW or BxDxHxW.
+        num_classes (int): Number of classes.
+
+    Returns:
+        torch.Tensor: One-hot encoded tensor.
+    """
+    assert 3 <= len(label.shape) <= 4, f'Invalid Label Shape {label.shape}'
+
+    shape = (label.shape[0], num_classes) + label.shape[1:]
+    label_ohe = torch.zeros(shape)
+
     for batch_idx, batch_el_label in enumerate(label):
         for cls in range(num_classes):
             label_ohe[batch_idx, cls] = (batch_el_label == cls)
-    label_ohe = label_ohe.long()
-    return label_ohe
+
+    return label_ohe.long()
 
 
-def dice_n_classes(outputs, labels, do_one_hot=False, get_list=False, device=None):
+def multi_class_dice(outputs: torch.Tensor, labels: torch.Tensor, do_one_hot: bool = False,
+                     get_list: bool = False, device: torch.device = None) -> Union[List[torch.Tensor], torch.Tensor]:
     """
-    Computes the Multi-class classification Dice Coefficient.
-    It is computed as the average Dice for all classes, each time
-    considering a class versus all the others.
-    Class 0 (background) is not considered in the average.
-    :param outputs: probabilities outputs of the CNN. Shape: [BxKxHxW]
-    :param labels:  ground truth                      Shape: [BxKxHxW]
-    :param do_one_hot: set to True if ground truth has shape [BxHxW]
-    :param get_list:   set to True if you want the list of dices per class instead of average
-    :param device: CUDA device on which compute the dice
-    :return: Multiclass classification Dice Loss
+    Compute the multi-class Dice coefficient.
+
+    Args:
+        outputs (torch.Tensor): CNN output probabilities of shape [BxKxHxW].
+        labels (torch.Tensor): Ground truth of shape [BxKxHxW] or [BxHxW].
+        do_one_hot (bool): Set to True if ground truth has shape [BxHxW].
+        get_list (bool): Set to True to return a list of Dice coefficients per class.
+        device (torch.device): CUDA device for computation.
+
+    Returns:
+        Union[List[torch.Tensor], torch.Tensor]: List of Dice coefficients or average Dice coefficient.
     """
     num_classes = outputs.shape[1]
     if do_one_hot:
-        labels = one_hot_encode(labels, num_classes)
-        labels = labels.cuda(device=device)
+        labels = one_hot_encode(labels, num_classes).to(device)
 
-    dices = list()
-    for cls in range(1, num_classes):
-        outputs_ = outputs[:, cls].unsqueeze(dim=1)
-        labels_ = labels[:, cls].unsqueeze(dim=1)
-        dice_ = dice(outputs_, labels_)
-        dices.append(dice_)
-    if get_list:
-        return dices
-    else:
-        return sum(dices) / (num_classes - 1)
+    dices = [dice_coefficient(outputs[:, cls].unsqueeze(1), labels[:, cls].unsqueeze(1))
+             for cls in range(1, num_classes)]
+
+    return dices if get_list else sum(dices) / (num_classes - 1)
 
 
-def get_multi_dice_loss(outputs, labels, device=None):
-    labels = labels[:, 0]
-    return dice_n_classes(outputs, labels, do_one_hot=True, get_list=False, device=device)
+def get_multi_dice_loss(outputs: torch.Tensor, labels: torch.Tensor, device: torch.device = None) -> torch.Tensor:
+    """
+    Compute the multi-class Dice loss.
+
+    Args:
+        outputs (torch.Tensor): CNN output probabilities.
+        labels (torch.Tensor): Ground truth labels.
+        device (torch.device): CUDA device for computation.
+
+    Returns:
+        torch.Tensor: Multi-class Dice loss.
+    """
+    return multi_class_dice(outputs, labels[:, 0], do_one_hot=True, get_list=False, device=device)

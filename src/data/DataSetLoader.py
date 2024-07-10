@@ -2,23 +2,19 @@ from src.data import *
 
 
 class DataSetLoader:
-    def __init__(self):
-        train_transform = Compose([
-            ZNormalization(),
-            # Add more transformations for training if needed
-        ])
-        val_transform = Compose([
-            ZNormalization(),
-        ])
+    """
+    A class to handle loading and preprocessing of the Hippocampus dataset.
+    """
 
+    def __init__(self):
+        """
+        Initialize the DataSetLoader, setting up the full dataset,
+        splitting it into train and validation sets, and creating DataLoaders.
+        """
         self.full_dataset = HippocampusDataset(transform=train_transform)
         self.train_dataset, self.val_dataset = self._split_dataset()
-
-        # Apply different transforms to validation set
-        self.val_dataset.dataset.transform = val_transform
-
         self.train_loader = self._create_data_loader(self.train_dataset, shuffle=True)
-        self.val_loader = self._create_data_loader(self.val_dataset, shuffle=False)
+        self.val_loader = self._create_data_loader(self.val_dataset, shuffle=True)
 
     # Explanation: The __init__ method sets up the entire data pipeline:
     # 1. It creates the full dataset
@@ -27,6 +23,12 @@ class DataSetLoader:
     # This encapsulation makes it easy to manage the entire data loading process.
 
     def _split_dataset(self):
+        """
+        Split the full dataset into training and validation sets.
+
+        Returns:
+            tuple: (train_dataset, val_dataset)
+        """
         total_size = len(self.full_dataset)
         train_size = int(Config.TRAIN_SPLIT_RATIO * total_size)
         val_size = total_size - train_size
@@ -38,6 +40,16 @@ class DataSetLoader:
 
     @staticmethod
     def _create_data_loader(dataset, shuffle):
+        """
+        Create a DataLoader for the given dataset.
+
+        Args:
+            dataset (Dataset): The dataset to load.
+            shuffle (bool): Whether to shuffle the data.
+
+        Returns:
+            DataLoader: The created DataLoader.
+        """
         return DataLoader(
             dataset,
             batch_size=Config.BATCH_SIZE,
@@ -60,9 +72,11 @@ class DataSetLoader:
     # - May require careful tuning of num_workers for optimal performance
 
     def get_train_loader(self):
+        """Get the DataLoader for the training dataset."""
         return self.train_loader
 
     def get_val_loader(self):
+        """Get the DataLoader for the validation dataset."""
         return self.val_loader
 
     # Explanation: These getter methods provide access to the train and validation loaders.

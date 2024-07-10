@@ -2,63 +2,84 @@ from src.data import *
 
 
 class HippocampusDataset(Dataset):
+    """
+    Dataset class for loading and preprocessing hippocampus MRI data.
+    """
+
     def __init__(self, json_file=Config.DATA_JSON, root_dir=Config.DATA_DIR, transform=None):
+        """
+        Initialize the dataset.
+
+        Args:
+            json_file (str): Path to the JSON file containing dataset information.
+            root_dir (str): Root directory of the dataset.
+            transform (callable, optional): Optional transform to be applied on a sample.
+        """
+        self._check_and_download_dataset(root_dir)
+        self._load_json_data(json_file)
+        self.root_dir = root_dir
+        self.transform = transform if transform is not None else train_transform
+        self._extract_image_and_label_paths()
+
+    @staticmethod
+    def _check_and_download_dataset(root_dir):
         if not os.path.isdir(root_dir):
-            print("dataset not found: Start Downloading....")
+            print("Dataset not found. Starting download...")
             download_dataset()
+
+    def _load_json_data(self, json_file):
         with open(json_file, "r") as file:
             self.json_data = json.load(file)
         self.train_data = self.json_data["training"]
-        self.root_dir = root_dir
-        self.transform = transform
+
+    def _extract_image_and_label_paths(self):
         self.images = [item["image"].lstrip('./') for item in self.train_data]
         self.labels = [item["label"].lstrip('./') for item in self.train_data]
 
     def __len__(self):
+        """Return the total number of samples in the dataset."""
         return len(self.images)
 
     def __getitem__(self, idx):
+        """
+        Fetch a sample from the dataset.
+
+        Args:
+            idx (int): Index of the sample to fetch.
+
+        Returns:
+            tuple: (image, label) where image is a float tensor and label is a long tensor.
+        """
         img_path = os.path.join(self.root_dir, self.images[idx])
         label_path = os.path.join(self.root_dir, self.labels[idx])
 
         image = self.load_and_preprocess(img_path)
-        label = self.load_and_preprocess(label_path, is_label=True)
+        label = self.load_and_preprocess(label_path)
 
-        # Apply transformations
+        sample = {'image': image, 'label': label}
+
         if self.transform:
-            image = self.transform(image)
+            sample = self.transform(sample)
 
-        # Ensure padding
-        image = pad_3d_image(image, zero_pad=False, pad_ref=Config.PADDING_TARGET_SHAPE)
-        label = pad_3d_image(label, zero_pad=True, pad_ref=Config.PADDING_TARGET_SHAPE)
-
-        return torch.from_numpy(image).float(), torch.from_numpy(label).long()
-
-    def load_and_preprocess(self, file_path, is_label=False):
-        data = nib.load(file_path).get_fdata()
-        padded_data = pad_3d_image(data)
-
-        if not is_label:
-            padded_data = self.normalize(padded_data)
-            padded_data = np.expand_dims(padded_data, axis=0)  # Add channel dimension
-        else:
-            padded_data = np.expand_dims(padded_data, axis=0)  # Add channel dimension
-        return padded_data
+        return sample['image'].float(), sample['label'].long()
 
     @staticmethod
-    def normalize(image):
-        return (image - image.min()) / (image.max() - image.min())
+    def load_and_preprocess(file_path):
+        """
+        Load and preprocess a NIfTI file.
+
+        Args:
+            file_path (str): Path to the NIfTI file.
+
+        Returns:
+            torch.Tensor: Preprocessed data as a PyTorch tensor.
+        """
+        data = nib.load(file_path).get_fdata()
+        data = torch.from_numpy(data).float()
+        data = data.unsqueeze(0)  # Add channel dimension
+        return data
 
     # Explanation: __getitem__ is crucial. It's called by the DataLoader to fetch
-    # individual samples. Here's what it does:
-    # 1. Loads the image and label from files
-    # 2. Pads both to a standard size
-    # 3. Normalizes the image to [0, 1] range
-    # 4. Adds a channel dimension to the image (making it 1x64x64x64)
-    # 5. Applies any additional transforms
-    # 6. Converts both image and label to PyTorch tensors
-    # The image is returned as a float tensor, while the label is a long tensor,
-    # which is typical for segmentation tasks.
 
 
 """

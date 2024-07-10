@@ -2,30 +2,47 @@ from src.Config import Config
 from src.data import *
 
 
-def pad_3d_image(image, zero_pad=False, pad_ref=Config.PADDING_TARGET_SHAPE):
+def get_pad_3d_image(pad_ref: tuple = Config.PADDING_TARGET_SHAPE, zero_pad: bool = True):
     """
-    Pads a 3D image tensor to a specified reference size, choosing between padding with zeros or the minimum value of the image.
+    Creates a function to pad 3D images to a specified size.
 
-    Parameters:
-    - image: A 4D PyTorch tensor representing the 3D image to be padded.
-    - zero_pad: Boolean indicating whether to pad with zeros or the minimum value of the image.
-    - pad_ref: Tuple specifying the reference size for padding. Default is (0, 0, 0), meaning no padding.
+    Args:
+        pad_ref (tuple): The target size for padding (depth, height, width). Default is (48, 64, 48).
+        zero_pad (bool): If True, pad with zeros. If False, pad with the minimum value of the image. Default is True.
 
     Returns:
-    - A 4D PyTorch tensor representing the padded image.
+        function: A function that pads 3D images to the specified size.
     """
-    if zero_pad:
-        value_to_pad = 0
-    else:
-        value_to_pad = image.min()
 
-    target_shape = tuple(max(dim, ref) for dim, ref in zip(image.shape[1:], pad_ref))
+    def pad_3d_image(image: torch.Tensor) -> torch.Tensor:
+        """
+        Pads a 3D image tensor to the specified size.
 
-    if value_to_pad == 0:
-        image_padded = torch.zeros((*image.shape[:1], *target_shape))
-    else:
-        image_padded = value_to_pad * torch.ones((*image.shape[:1], *target_shape))
+        Args:
+            image (torch.Tensor): The input 3D image tensor.
 
-    image_padded[:, :image.shape[1], :image.shape[2], :image.shape[3]] = image
+        Returns:
+            torch.Tensor: The padded 3D image tensor.
+        """
+        # Determine the value to use for padding
+        value_to_pad = 0 if zero_pad else image.min()
 
-    return image_padded
+        # Create the target shape, including the channel dimension
+        pad_ref_channels = (image.shape[0], *pad_ref)
+
+        # Create the padded image tensor
+        if value_to_pad == 0:
+            image_padded = torch.zeros(pad_ref_channels)
+        else:
+            image_padded = torch.full(pad_ref_channels, value_to_pad)
+
+        # Copy the original image into the padded tensor
+        image_padded[:, :image.shape[1], :image.shape[2], :image.shape[3]] = image
+
+        return image_padded
+
+    return pad_3d_image
+
+# Usage example:
+# pad_func = get_pad_3d_image(pad_ref=(128, 128, 128), zero_pad=False)
+# padded_image = pad_func(original_image)
