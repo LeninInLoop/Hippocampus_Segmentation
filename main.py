@@ -37,15 +37,6 @@ def get_optimizer(model):
     raise ValueError(f"Unsupported optimizer: {Config.OPTIMIZER}")
 
 
-def print_batch_info(loader, loader_name):
-    """Print sample batch shapes for a given loader."""
-    for batch_images, batch_labels in loader:
-        print(f"{loader_name} batch image shape: {batch_images.shape}")
-        print(f"{loader_name} batch label shape: {batch_labels.shape}")
-        break
-    print(f"Number of {loader_name.lower()} samples: {len(loader.dataset)}")
-
-
 def main():
     if not Config.USE_GPU:
         print("GPU usage is disabled in config. Using CPU instead.")
@@ -54,6 +45,9 @@ def main():
         device = setup_gpu()
         if device is None:
             return
+
+    print_config()
+    print_dataset_info()
 
     model = initialize_model(device)
     optimizer = get_optimizer(model)
@@ -70,14 +64,4 @@ def main():
 
 if __name__ == '__main__':
     main()
-
-# Commented out code for future reference
-# with open(Config.DATA_JSON, 'r') as f:
-#     data_json = json.load(f)
-# data_list = data_json['training']
-# for idx in range(len(data_list)):
-#     img_path = Config.DATA_DIR + data_list[idx]['image'][1:]
-#     print(img_path)
-#     image = nib.load(img_path)
-#     print(image.shape)
 

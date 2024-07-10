@@ -9,7 +9,7 @@ class Config:
     NUM_WORKERS = 4
     NUM_EPOCHS = 20
     VAL_EPOCHS = 4
-    LEARNING_RATE = 0.01
+    LEARNING_RATE = 0.005
 
     # Optimizer settings
     OPTIMIZER = 'Adam'
@@ -24,4 +24,4 @@ class Config:
 
     # Model saving
     MODEL_SAVE_PATH = DATA_DIR + r"\Output\best_unet3d_model.pth"
-    LOGS_FOLDER = r"Output\logs"
+    LOGS_FOLDER = DATA_DIR + r"\Output\logs"
