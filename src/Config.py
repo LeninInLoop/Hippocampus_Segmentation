@@ -1,7 +1,7 @@
 class Config:
     # Data paths
-    DATA_DIR = r'C:\Users\Adib\PycharmProjects\Hippocampus_Segmentation\dataset'
-    DATA_JSON = DATA_DIR + r"\dataset.json"
+    VANDERBILT_DATA_DIR = r'C:\Users\Adib\PycharmProjects\Hippocampus_Segmentation\dataset'
+    VANDERBILT_DATA_JSON = VANDERBILT_DATA_DIR + r"\dataset.json"
 
     # Training settings
     TRAIN_SPLIT_RATIO = 0.8
@@ -23,5 +23,5 @@ class Config:
     USE_GPU_WITH_MORE_COMPUTE_CAPABILITY = False
 
     # Model saving
-    MODEL_SAVE_PATH = DATA_DIR + r"\Output\best_unet3d_model.pth"
-    LOGS_FOLDER = DATA_DIR + r"\Output\logs"
+    MODEL_SAVE_PATH = r".\Output\best_unet3d_model.pth"
+    LOGS_FOLDER = r".\Output\logs"

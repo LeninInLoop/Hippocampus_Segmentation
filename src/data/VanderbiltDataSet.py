@@ -1,12 +1,12 @@
 from src.data import *
 
 
-class HippocampusDataset(Dataset):
+class VanderbiltHippocampusDataset(Dataset):
     """
     Dataset class for loading and preprocessing hippocampus MRI data.
     """
 
-    def __init__(self, json_file=Config.DATA_JSON, root_dir=Config.DATA_DIR, transform=None):
+    def __init__(self, json_file=Config.VANDERBILT_DATA_JSON, root_dir=Config.VANDERBILT_DATA_DIR, transform=None):
         """
         Initialize the dataset.
 

@@ -1,7 +1,5 @@
-from src.utils import *
-from src.train import Train
-from src.Config import Config
-from src.data import dataset
+from src.train import Train, Validation
+from src.data import *
 from src.models import UNet3D
 
 
@@ -37,7 +35,23 @@ def get_optimizer(model):
     raise ValueError(f"Unsupported optimizer: {Config.OPTIMIZER}")
 
 
+def setup_data_loaders():
+    """Set up and return data loaders."""
+    hippocampus_strategy = VanderbiltHippocampusDatasetStrategy()
+    hippocampus_factory = DefaultDataLoaderFactory(
+        dataset_strategy=hippocampus_strategy,
+        transform=train_transform,
+        split_ratio=Config.TRAIN_SPLIT_RATIO,
+        batch_size=Config.BATCH_SIZE,
+        num_workers=Config.NUM_WORKERS
+    )
+    hippocampus_loader = DataSetLoader(hippocampus_factory)
+
+    return hippocampus_loader.get_train_loader(), hippocampus_loader.get_val_loader()
+
+
 def main():
+    # Setup device
     if not Config.USE_GPU:
         print("GPU usage is disabled in config. Using CPU instead.")
         device = torch.device("cpu")
@@ -46,22 +60,27 @@ def main():
         if device is None:
             return
 
+    # Print configuration and dataset info
     print_config()
-    print_dataset_info()
+    print_vanderbilt_dataset_info()
 
+    # Initialize model and optimizer
     model = initialize_model(device)
     optimizer = get_optimizer(model)
 
-    train_loader = dataset.get_train_loader()
-    val_loader = dataset.get_val_loader()
+    # Setup data loaders
+    train_loader, val_loader = setup_data_loaders()
 
+    # Print batch info
     print_batch_info(train_loader, "Train")
     print_batch_info(val_loader, "Val")
 
+    # Initialize and start training
     trainer = Train(model, device, train_loader, val_loader, optimizer)
     trainer.start_training()
+
+    Validation.load_and_validate(model, Config.MODEL_SAVE_PATH, val_loader, device)
 
 
 if __name__ == '__main__':
     main()
-

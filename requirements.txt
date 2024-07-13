@@ -1,2 +1,7 @@
 torchio
 torch
+scikit-learn
+pandas
+matplotlib
+numpy
+seaborn

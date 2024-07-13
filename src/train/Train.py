@@ -125,3 +125,50 @@ class Train:
             checkpoint_path = os.path.join(Config.LOGS_FOLDER, filename)
             torch.save(self.model.state_dict(), checkpoint_path)
             print(f"Checkpoint saved: {checkpoint_path}")
+
+    @staticmethod
+    def evaluate_model(model, model_path, val_loader, device):
+        """
+        Evaluate the model using the specified model path and validation dataset.
+
+        Args:
+            model (nn.Module): The model architecture to evaluate.
+            model_path (str): Path to the model checkpoint.
+            val_loader (DataLoader): DataLoader for the validation dataset.
+            device (torch.device): The device to run the evaluation on.
+
+        Returns:
+            dict: A dictionary containing evaluation metrics.
+        """
+        # Load the model weights
+        model.load_state_dict(torch.load(model_path, map_location=device))
+        model.to(device)
+        model.eval()
+
+        total_loss = 0
+        total_dice = 0
+        num_batches = 0
+
+        with torch.no_grad():
+            for batch_images, batch_labels in val_loader:
+                batch_images = batch_images.to(device)
+                batch_labels = batch_labels.to(device)
+
+                outputs = model(batch_images)
+                loss = get_multi_dice_loss(outputs, batch_labels, device=device)
+                dice = calculate_dice_score(outputs, batch_labels)
+
+                total_loss += loss.item()
+                total_dice += dice.item()
+                num_batches += 1
+
+        avg_loss = total_loss / num_batches
+        avg_dice = total_dice / num_batches
+
+        results = {
+            "avg_loss": avg_loss,
+            "avg_dice": avg_dice,
+            # Add more metrics here as needed
+        }
+
+        return results
