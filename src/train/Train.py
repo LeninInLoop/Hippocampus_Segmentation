@@ -107,21 +107,29 @@ class Train:
             best_val_loss (float): Best validation loss so far.
         """
         if val_loss < best_val_loss:
-            self._save_checkpoint('best_model.pth')
+            self._save_checkpoint(path=Config.BEST_MODEL_SAVE_PATH)
             print(f"New best model saved with validation loss: {val_loss:.4f}")
 
         if (epoch + 1) % Config.VAL_EPOCHS == 0:
             self._save_checkpoint(f'model_epoch_{epoch + 1:04d}.pth')
             print(f"Checkpoint saved at epoch {epoch + 1}")
 
-    def _save_checkpoint(self, filename):
+    def _save_checkpoint(self, filename=None, path=None):
         """
         Save a checkpoint of the model.
 
         Args:
             filename (str): Name of the file to save the checkpoint.
         """
-        if Config.LOGS_FOLDER is not None:
+        if Config.LOGS_FOLDER is None:
+            return
+
+        if path is None:
+            if filename is None:
+                return
             checkpoint_path = os.path.join(Config.LOGS_FOLDER, filename)
-            torch.save(self.model.state_dict(), checkpoint_path)
-            print(f"Checkpoint saved: {checkpoint_path}")
+        else:
+            checkpoint_path = path
+
+        torch.save(self.model.state_dict(), checkpoint_path)
+        print(f"Checkpoint saved: {checkpoint_path}")

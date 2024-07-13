@@ -7,7 +7,7 @@ import os
 import torch
 import torch.nn as nn
 from torch.utils.data import random_split, DataLoader
-from sklearn.metrics import confusion_matrix
+from sklearn.metrics import accuracy_score, confusion_matrix
 import torch.optim as optim
 import time
 import os.path
@@ -16,6 +16,7 @@ from tqdm import tqdm
 import matplotlib.pyplot as plt
 import seaborn as sns
 import pandas as pd
+import plotly.graph_objects as go
 from .SystemInfo import SystemInfo
 from .Helper import *
 from .System import System

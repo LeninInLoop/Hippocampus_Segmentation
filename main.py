@@ -1,3 +1,5 @@
+import os.path
+
 from src.train import Train, Validation
 from src.data import *
 from src.models import UNet3D
@@ -62,6 +64,10 @@ def main():
 
     # Print configuration and dataset info
     print_config()
+
+    if not os.path.isdir(Config.VANDERBILT_DATA_DIR):
+        download_dataset(Config.VANDERBILT_DATA_DIR)
+
     print_vanderbilt_dataset_info()
 
     # Initialize model and optimizer
@@ -79,7 +85,7 @@ def main():
     trainer = Train(model, device, train_loader, val_loader, optimizer)
     trainer.start_training()
 
-    Validation.load_and_validate(model, Config.MODEL_SAVE_PATH, val_loader, device)
+    Validation.load_and_validate(model, Config.BEST_MODEL_SAVE_PATH, val_loader, device)
 
 
 if __name__ == '__main__':
