@@ -85,7 +85,7 @@ def main():
     # trainer.start_training()
     #
     # Validation.load_and_validate(model, Config.BEST_MODEL_SAVE_PATH, val_loader, device)
-    visualizer = UNet3DVisualizer()
+    visualizer = UNet3DVisualizer(model)
     visualizer.generate_diagram((16, 1, 48, 64, 48), filename="ModelDiagram", format="png")
 
 

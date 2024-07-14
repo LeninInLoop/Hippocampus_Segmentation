@@ -4,8 +4,8 @@ from src.models.UNet3D import UNet3D
 
 
 class UNet3DVisualizer:
-    def __init__(self, in_channels=1, out_channels=2, feat_channels=32):
-        self.model = UNet3D(in_channels, out_channels, feat_channels)
+    def __init__(self, model):
+        self.model = model
 
     def generate_diagram(self, input_shape=(16, 1, 48, 64, 48), filename="UNet3D_architecture", format="png"):
         """
