@@ -1,8 +1,7 @@
 import os.path
-
 from src.train import Train, Validation
 from src.data import *
-from src.models import UNet3D
+from src.models import UNet3D, UNet3DVisualizer
 
 
 def setup_gpu():
@@ -72,20 +71,22 @@ def main():
 
     # Initialize model and optimizer
     model = initialize_model(device)
-    optimizer = get_optimizer(model)
-
-    # Setup data loaders
-    train_loader, val_loader = setup_data_loaders()
-
-    # Print batch info
-    print_batch_info(train_loader, "Train")
-    print_batch_info(val_loader, "Val")
-
-    # Initialize and start training
-    trainer = Train(model, device, train_loader, val_loader, optimizer)
-    trainer.start_training()
-
-    Validation.load_and_validate(model, Config.BEST_MODEL_SAVE_PATH, val_loader, device)
+    # optimizer = get_optimizer(model)
+    #
+    # # Setup data loaders
+    # train_loader, val_loader = setup_data_loaders()
+    #
+    # # Print batch info
+    # print_batch_info(train_loader, "Train")
+    # print_batch_info(val_loader, "Val")
+    #
+    # # Initialize and start training
+    # trainer = Train(model, device, train_loader, val_loader, optimizer)
+    # trainer.start_training()
+    #
+    # Validation.load_and_validate(model, Config.BEST_MODEL_SAVE_PATH, val_loader, device)
+    visualizer = UNet3DVisualizer()
+    visualizer.generate_diagram((16, 1, 48, 64, 48), filename="ModelDiagram", format="png")
 
 
 if __name__ == '__main__':

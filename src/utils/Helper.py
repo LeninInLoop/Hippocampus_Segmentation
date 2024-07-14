@@ -92,8 +92,8 @@ def print_config():
 
     config_items = [
         ("Data Paths", [
-            ("DATA_DIR", Config.DATA_DIR),
-            ("DATA_JSON", Config.DATA_JSON)
+            ("DATA_DIR", Config.VANDERBILT_DATA_DIR),
+            ("DATA_JSON", Config.VANDERBILT_DATA_JSON)
         ]),
         ("Training Settings", [
             ("TRAIN_SPLIT_RATIO", Config.TRAIN_SPLIT_RATIO),
@@ -115,7 +115,7 @@ def print_config():
             ("USE_GPU_WITH_MORE_COMPUTE_CAPABILITY", Config.USE_GPU_WITH_MORE_COMPUTE_CAPABILITY)
         ]),
         ("Model Saving", [
-            ("MODEL_SAVE_PATH", Config.MODEL_SAVE_PATH),
+            ("MODEL_SAVE_PATH", Config.BEST_MODEL_SAVE_PATH),
             ("LOGS_FOLDER", Config.LOGS_FOLDER)
         ])
     ]
