@@ -96,7 +96,8 @@ def print_config():
             ("DATA_JSON", Config.VANDERBILT_DATA_JSON)
         ]),
         ("Training Settings", [
-            ("TRAIN_SPLIT_RATIO", Config.TRAIN_SPLIT_RATIO),
+            ("DATASET_TEST_SPLIT_RATIO", Config.TEST_SPLIT_RATIO),
+            ("TRAIN_AND_VAL_SPLIT_RATIO", Config.TRAIN_AND_VAL_SPLIT_RATIO),
             ("BATCH_SIZE", Config.BATCH_SIZE),
             ("NUM_WORKERS", Config.NUM_WORKERS),
             ("NUM_EPOCHS", Config.NUM_EPOCHS),

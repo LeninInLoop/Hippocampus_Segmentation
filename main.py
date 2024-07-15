@@ -43,7 +43,7 @@ def setup_data_loaders():
         dataset_strategy=hippocampus_strategy,
         transform=train_transform,
         train_val_ratio=Config.TRAIN_AND_VAL_SPLIT_RATIO,
-        test_ratio=Config.TEST_SPLIT_RADIO,
+        test_ratio=Config.TEST_SPLIT_RATIO,
         batch_size=Config.BATCH_SIZE,
         num_workers=Config.NUM_WORKERS
     )
@@ -84,6 +84,7 @@ def main():
     # Print batch info
     print_batch_info(train_loader, "Train")
     print_batch_info(val_loader, "Val")
+    print_batch_info(test_loader, "Test")
 
     # Initialize and start training
     trainer = Train(model, device, train_loader, val_loader, optimizer)

@@ -5,7 +5,7 @@ class Config:
 
     # Training settings
     TRAIN_AND_VAL_SPLIT_RATIO = 0.8
-    TEST_SPLIT_RADIO = 0.8
+    TEST_SPLIT_RATIO = 0.8
     BATCH_SIZE = 16
     NUM_WORKERS = 2
     NUM_EPOCHS = 20
