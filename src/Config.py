@@ -10,7 +10,7 @@ class Config:
     NUM_WORKERS = 2
     NUM_EPOCHS = 20
     VAL_EPOCHS = 4
-    LEARNING_RATE = 0.0001
+    LEARNING_RATE = 0.01
 
     # Optimizer settings
     OPTIMIZER = 'Adam'

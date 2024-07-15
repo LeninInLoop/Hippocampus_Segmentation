@@ -153,10 +153,19 @@ class Validation:
 
     @staticmethod
     def save_confusion_matrix(cm, norm_cm, num_classes, output_dir=Config.LOGS_FOLDER):
+        """
+        Save confusion matrices as CSV files and a combined image.
+
+        Args:
+        cm (numpy.ndarray): The confusion matrix.
+        norm_cm (numpy.ndarray): The normalized confusion matrix.
+        num_classes (int): The number of classes in the classification problem.
+        output_dir (str): The directory to save the outputs. Defaults to Config.LOGS_FOLDER.
+        """
         # Ensure output directory exists
         os.makedirs(output_dir, exist_ok=True)
 
-        # Save as CSV
+        # Save raw confusion matrix as CSV
         df_cm = pd.DataFrame(cm, index=range(num_classes), columns=range(num_classes))
         csv_path = os.path.join(output_dir, 'confusion_matrix.csv')
         df_cm.to_csv(csv_path)
@@ -168,23 +177,26 @@ class Validation:
         df_norm_cm.to_csv(norm_csv_path)
         print(f"Normalized confusion matrix saved as CSV: {norm_csv_path}")
 
-        # Save as image
+        # Create a figure with two subplots side by side
         fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(20, 8))
 
+        # Plot raw confusion matrix
         sns.heatmap(df_cm, annot=True, fmt='d', cmap='Blues', ax=ax1)
         ax1.set_title('Confusion Matrix')
         ax1.set_ylabel('True Label')
         ax1.set_xlabel('Predicted Label')
 
+        # Plot normalized confusion matrix
         sns.heatmap(df_norm_cm, annot=True, fmt='.2f', cmap='Blues', ax=ax2)
         ax2.set_title('Normalized Confusion Matrix')
         ax2.set_ylabel('True Label')
         ax2.set_xlabel('Predicted Label')
 
+        # Adjust layout and save the figure
         plt.tight_layout()
         img_path = os.path.join(output_dir, 'confusion_matrices.png')
         plt.savefig(img_path)
-        plt.close()
+        plt.close()  # Close the figure to free up memory
         print(f"Confusion matrices saved as image: {img_path}")
 
     @classmethod
