@@ -10,6 +10,7 @@ class Validation:
         multi_dices = []
         all_labels = []
         all_predictions = []
+        output_dir = Config.TEST_LOGS_FOLDER if is_test_dataset else Config.LOGS_FOLDER
 
         with torch.no_grad():
             for batch_idx, (inputs, labels) in enumerate(tqdm(val_loader, desc="Validation")):
@@ -27,7 +28,6 @@ class Validation:
 
                 # Save example images
                 if batch_idx == 0:
-                    output_dir = Config.TEST_LOGS_FOLDER if is_test_dataset else Config.LOGS_FOLDER
                     cls.save_example_images(inputs, labels, outputs2, output_dir)
 
         print(f"Example 3D visualizations saved in {Config.LOGS_FOLDER}")
