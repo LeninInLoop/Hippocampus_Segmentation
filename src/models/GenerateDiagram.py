@@ -1,6 +1,7 @@
 import torch
 from torchviz import make_dot
-from src.models.UNet3D import UNet3D
+import torch.nn as nn
+from graphviz import Digraph
 
 
 class UNet3DVisualizer:

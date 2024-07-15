@@ -25,38 +25,52 @@ class DataLoaderFactory(ABC):
         """
         pass
 
+    @abstractmethod
+    def create_test_loader(self):
+        """
+        Create a DataLoader for the test dataset.
+
+        Returns:
+            A DataLoader object for the validation dataset.
+        """
+        pass
+
 
 class DefaultDataLoaderFactory(DataLoaderFactory):
-    def __init__(self, dataset_strategy, transform, split_ratio, batch_size, num_workers):
+    def __init__(self, dataset_strategy, transform, train_val_ratio, test_ratio, batch_size, num_workers):
         """
         Initialize the DefaultDataLoaderFactory.
 
         Args:
             dataset_strategy: A strategy object for creating the dataset.
             transform: The data transformation to be applied to the dataset.
-            split_ratio (float): The ratio of the dataset to use for training (0.0 to 1.0).
+            train_val_ratio (float): The ratio of the dataset to use for training (0.0 to 1.0).
+            test_ratio (float): The ratio of the dataset to use for testing (0.0 to 1.0).
             batch_size (int): The number of samples per batch.
             num_workers (int): The number of subprocesses to use for data loading.
         """
         self.dataset_strategy = dataset_strategy
         self.transform = transform
-        self.split_ratio = split_ratio
+        self.train_val_ratio = train_val_ratio
+        self.test_ratio = test_ratio
         self.batch_size = batch_size
         self.num_workers = num_workers
-        self.full_dataset = self.dataset_strategy.create_dataset(self.transform)
-        self.train_dataset, self.val_dataset = self._split_dataset()
 
-    def _split_dataset(self):
+        self.full_dataset = self.dataset_strategy.create_dataset(self.transform)
+        self.train_val_dataset, self.test_dataset = self._split_dataset(self.full_dataset, self.test_ratio)
+        self.train_dataset, self.val_dataset = self._split_dataset(self.train_val_dataset, self.train_val_ratio)
+
+    @staticmethod
+    def _split_dataset(dataset, split_ratio):
         """
-        Split the full dataset into training and validation sets.
+        Split the full dataset into training and validation or test sets.
 
         Returns:
-            A tuple containing the training and validation datasets.
+            A tuple containing the training and validation or test datasets.
         """
-        total_size = len(self.full_dataset)
-        train_size = int(self.split_ratio * total_size)
-        val_size = total_size - train_size
-        return random_split(self.full_dataset, [train_size, val_size])
+        total_size = len(dataset)
+        split_size = int(split_ratio * total_size)
+        return random_split(dataset, [split_size, total_size - split_size])
 
     def _create_data_loader(self, dataset, shuffle):
         """
@@ -92,4 +106,13 @@ class DefaultDataLoaderFactory(DataLoaderFactory):
         Returns:
             A DataLoader object for the validation dataset.
         """
-        return self._create_data_loader(self.val_dataset, shuffle=False)
+        return self._create_data_loader(self.val_dataset, shuffle=True)
+
+    def create_test_loader(self):
+        """
+        Create a DataLoader for the test dataset.
+
+        Returns:
+            A DataLoader object for the validation dataset.
+        """
+        return self._create_data_loader(self.test_dataset, shuffle=True)

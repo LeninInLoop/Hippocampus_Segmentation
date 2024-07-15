@@ -4,7 +4,8 @@ class Config:
     VANDERBILT_DATA_JSON = VANDERBILT_DATA_DIR + r"./dataset.json"
 
     # Training settings
-    TRAIN_SPLIT_RATIO = 0.8
+    TRAIN_AND_VAL_SPLIT_RATIO = 0.8
+    TEST_SPLIT_RADIO = 0.8
     BATCH_SIZE = 16
     NUM_WORKERS = 2
     NUM_EPOCHS = 20

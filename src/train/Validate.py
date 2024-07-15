@@ -8,7 +8,7 @@ import os
 
 class Validation:
     @classmethod
-    def validate(cls, model, val_loader, device):
+    def validate(cls, model, val_loader, device, is_test_dataset=False):
         print("Starting Validation...")
         model.eval()
         multi_dices = []
@@ -31,7 +31,8 @@ class Validation:
 
                 # Save example images
                 if batch_idx == 0:
-                    cls.save_example_images(inputs, labels, outputs2, Config.LOGS_FOLDER)
+                    output_dir = Config.LOGS_FOLDER + "/test" if is_test_dataset else Config.LOGS_FOLDER
+                    cls.save_example_images(inputs, labels, outputs2, output_dir)
 
         print(f"Example 3D visualizations saved in {Config.LOGS_FOLDER}")
         multi_dices_np = np.array(multi_dices)
@@ -57,7 +58,7 @@ class Validation:
         }
 
         cls.print_results(results)
-        cls.save_confusion_matrix(conf_matrix, norm_conf_matrix, 3, Config.LOGS_FOLDER)
+        cls.save_confusion_matrix(conf_matrix, norm_conf_matrix, 3, output_dir)
         return results
 
     @staticmethod
@@ -74,75 +75,75 @@ class Validation:
 
     @staticmethod
     def save_example_images(inputs, labels, predictions, output_dir):
-      os.makedirs(output_dir, exist_ok=True)
+        os.makedirs(output_dir, exist_ok=True)
 
-      for batch_idx in range(inputs.shape[0]):
-          input_vol = inputs[batch_idx, 0].cpu().numpy()
-          label_vol = labels[batch_idx, 0].cpu().numpy()
-          pred_vol = predictions[batch_idx].cpu().numpy()
+        for batch_idx in range(inputs.shape[0]):
+            input_vol = inputs[batch_idx, 0].cpu().numpy()
+            label_vol = labels[batch_idx, 0].cpu().numpy()
+            pred_vol = predictions[batch_idx].cpu().numpy()
 
-          # Print volume statistics
-          Validation.print_volume_stats(input_vol, "Input")
-          Validation.print_volume_stats(label_vol, "Label")
-          Validation.print_volume_stats(pred_vol, "Prediction")
+            # Print volume statistics
+            Validation.print_volume_stats(input_vol, "Input")
+            Validation.print_volume_stats(label_vol, "Label")
+            Validation.print_volume_stats(pred_vol, "Prediction")
 
-          # Create subplots
-          fig = make_subplots(
-              rows=1, cols=3,
-              specs=[[{'type': 'scene'}, {'type': 'scene'}, {'type': 'scene'}]],
-              subplot_titles=('Input', 'Ground Truth', 'Prediction')
-          )
-
-          def add_voxel_plot(fig, vol, row, col, colorscale):
-            # Ensure the volume has valid shapes and ranges
-            x, y, z = np.meshgrid(
-                np.arange(vol.shape[0]),
-                np.arange(vol.shape[1]),
-                np.arange(vol.shape[2]),
-                indexing='ij'
-            )
-            vol_norm = (vol - np.min(vol)) / (np.max(vol) - np.min(vol))  # Normalize volume
-
-            fig.add_trace(
-                go.Volume(
-                    x=x.flatten(),
-                    y=y.flatten(),
-                    z=z.flatten(),
-                    value=vol_norm.flatten(),
-                    opacity=0.5,  # Adjust this value to change the transparency
-                    surface_count=50,  # Adjust this value to change the smoothness
-                    colorscale=colorscale,
-                ),
-                row=row, col=col
+            # Create subplots
+            fig = make_subplots(
+                rows=1, cols=3,
+                specs=[[{'type': 'scene'}, {'type': 'scene'}, {'type': 'scene'}]],
+                subplot_titles=('Input', 'Ground Truth', 'Prediction')
             )
 
-            return fig
+            def add_voxel_plot(fig, vol, row, col, colorscale):
+                # Ensure the volume has valid shapes and ranges
+                x, y, z = np.meshgrid(
+                    np.arange(vol.shape[0]),
+                    np.arange(vol.shape[1]),
+                    np.arange(vol.shape[2]),
+                    indexing='ij'
+                )
+                vol_norm = (vol - np.min(vol)) / (np.max(vol) - np.min(vol))  # Normalize volume
 
-          # Add voxel plots
-          add_voxel_plot(fig, input_vol, 1, 1, 'Gray')
-          add_voxel_plot(fig, label_vol, 1, 2, 'Viridis')
-          add_voxel_plot(fig, pred_vol, 1, 3, 'Inferno')
+                fig.add_trace(
+                    go.Volume(
+                        x=x.flatten(),
+                        y=y.flatten(),
+                        z=z.flatten(),
+                        value=vol_norm.flatten(),
+                        opacity=0.5,  # Adjust this value to change the transparency
+                        surface_count=50,  # Adjust this value to change the smoothness
+                        colorscale=colorscale,
+                    ),
+                    row=row, col=col
+                )
 
-          # Update layout
-          fig.update_layout(
-              title_text=f"3D Visualization - Batch {batch_idx}",
-              width=1800,
-              height=600
-          )
+                return fig
 
-          # Update scenes
-          for i in range(1, 4):
-              fig.update_scenes(
-                  aspectmode='data',
-                  xaxis_visible=True,
-                  yaxis_visible=True,
-                  zaxis_visible=True,
-                  row=1, col=i
-              )
+            # Add voxel plots
+            add_voxel_plot(fig, input_vol, 1, 1, 'Gray')
+            add_voxel_plot(fig, label_vol, 1, 2, 'Viridis')
+            add_voxel_plot(fig, pred_vol, 1, 3, 'Inferno')
 
-          # Save as interactive HTML
-          output_file = os.path.join(output_dir, f"example_3d_{batch_idx}.html")
-          fig.write_html(output_file)
+            # Update layout
+            fig.update_layout(
+                title_text=f"3D Visualization - Batch {batch_idx}",
+                width=1800,
+                height=600
+            )
+
+            # Update scenes
+            for i in range(1, 4):
+                fig.update_scenes(
+                    aspectmode='data',
+                    xaxis_visible=True,
+                    yaxis_visible=True,
+                    zaxis_visible=True,
+                    row=1, col=i
+                )
+
+            # Save as interactive HTML
+            output_file = os.path.join(output_dir, f"example_3d_{batch_idx}.html")
+            fig.write_html(output_file)
 
     @staticmethod
     def print_volume_stats(vol, name):
@@ -191,7 +192,7 @@ class Validation:
         print(f"Confusion matrices saved as image: {img_path}")
 
     @classmethod
-    def load_and_validate(cls, model, model_path, val_loader, device):
+    def load_and_validate(cls, model, model_path, val_loader, device, is_test_dataset=False):
         """
         Load a model from a checkpoint and perform validation.
 
@@ -200,10 +201,11 @@ class Validation:
             model_path (str): Path to the model checkpoint.
             val_loader (DataLoader): DataLoader for the validation dataset.
             device (torch.device): The device to run the validation on.
+            is_test_dataset (bool): Whether the dataset is testing dataset.
 
         Returns:
             dict: A dictionary containing validation metrics.
         """
         model.load_state_dict(torch.load(model_path, map_location=device))
         model.to(device)
-        return cls.validate(model, val_loader, device)
+        return cls.validate(model, val_loader, is_test_dataset)

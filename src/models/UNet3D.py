@@ -53,7 +53,3 @@ class UNet3D(nn.Module):
 
         final_conv = self.final_conv(up_conv3)
         return self.softmax(final_conv)
-
-
-# Test
-

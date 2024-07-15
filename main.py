@@ -42,13 +42,18 @@ def setup_data_loaders():
     hippocampus_factory = DefaultDataLoaderFactory(
         dataset_strategy=hippocampus_strategy,
         transform=train_transform,
-        split_ratio=Config.TRAIN_SPLIT_RATIO,
+        train_val_ratio=Config.TRAIN_AND_VAL_SPLIT_RATIO,
+        test_ratio=Config.TEST_SPLIT_RADIO,
         batch_size=Config.BATCH_SIZE,
         num_workers=Config.NUM_WORKERS
     )
     hippocampus_loader = DataSetLoader(hippocampus_factory)
 
-    return hippocampus_loader.get_train_loader(), hippocampus_loader.get_val_loader()
+    return (
+        hippocampus_loader.get_train_loader(),
+        hippocampus_loader.get_val_loader(),
+        hippocampus_loader.get_test_loader()
+    )
 
 
 def main():
@@ -71,22 +76,27 @@ def main():
 
     # Initialize model and optimizer
     model = initialize_model(device)
-    # optimizer = get_optimizer(model)
-    #
-    # # Setup data loaders
-    # train_loader, val_loader = setup_data_loaders()
-    #
-    # # Print batch info
-    # print_batch_info(train_loader, "Train")
-    # print_batch_info(val_loader, "Val")
-    #
-    # # Initialize and start training
-    # trainer = Train(model, device, train_loader, val_loader, optimizer)
-    # trainer.start_training()
-    #
-    # Validation.load_and_validate(model, Config.BEST_MODEL_SAVE_PATH, val_loader, device)
-    visualizer = UNet3DVisualizer(model)
-    visualizer.generate_diagram((16, 1, 48, 64, 48), filename="ModelDiagram", format="png")
+    optimizer = get_optimizer(model)
+
+    # Setup data loaders
+    train_loader, val_loader, test_loader = setup_data_loaders()
+
+    # Print batch info
+    print_batch_info(train_loader, "Train")
+    print_batch_info(val_loader, "Val")
+
+    # Initialize and start training
+    trainer = Train(model, device, train_loader, val_loader, optimizer)
+    trainer.start_training()
+
+    print("Validating Using validation Dataset:")
+    Validation.load_and_validate(model, Config.BEST_MODEL_SAVE_PATH, val_loader, device)
+
+    print("Validating Using Test Dataset:")
+    Validation.load_and_validate(model, Config.BEST_MODEL_SAVE_PATH, test_loader, device, is_test_dataset=True)
+
+    # visualizer = UNet3DVisualizer(model)
+    # visualizer.generate_diagram((16, 1, 48, 64, 48), filename="ModelDiagram", format="png")
 
 
 if __name__ == '__main__':
