@@ -17,6 +17,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import pandas as pd
 import plotly.graph_objects as go
+from plotly.subplots import make_subplots
 from .SystemInfo import SystemInfo
 from .Helper import *
 from .System import System

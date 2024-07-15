@@ -1,9 +1,5 @@
 from src.train.Loss import multi_class_dice
 from src.utils import *
-import plotly.graph_objects as go
-from plotly.subplots import make_subplots
-import numpy as np
-import os
 
 
 class Validation:
@@ -31,7 +27,7 @@ class Validation:
 
                 # Save example images
                 if batch_idx == 0:
-                    output_dir = Config.LOGS_FOLDER + "/test" if is_test_dataset else Config.LOGS_FOLDER
+                    output_dir = Config.TEST_LOGS_FOLDER if is_test_dataset else Config.LOGS_FOLDER
                     cls.save_example_images(inputs, labels, outputs2, output_dir)
 
         print(f"Example 3D visualizations saved in {Config.LOGS_FOLDER}")

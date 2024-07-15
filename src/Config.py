@@ -26,3 +26,4 @@ class Config:
     # Model saving
     BEST_MODEL_SAVE_PATH = r"./Output/best_unet3d_model.pth"
     LOGS_FOLDER = r"./Output/logs"
+    TEST_LOGS_FOLDER = LOGS_FOLDER + r"/Test"
