@@ -90,7 +90,7 @@ def multi_class_dice_loss(outputs: torch.Tensor, labels: torch.Tensor, do_one_ho
 
 
 def multi_class_dice(outputs: torch.Tensor, labels: torch.Tensor, do_one_hot: bool = False,
-                     get_list: bool = False, device: torch.device = None) -> Union[List[torch.Tensor], torch.Tensor]:
+                     get_list: bool = True, device: torch.device = None) -> Union[List[torch.Tensor], torch.Tensor]:
     """
     Compute the multi-class Dice coefficient.
 

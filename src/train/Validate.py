@@ -19,8 +19,8 @@ class Validation:
                 outputs = model(inputs)
                 outputs2 = torch.argmax(outputs, dim=1)  # B x Z x Y x X
 
-                multi_dice = multi_class_dice(outputs, labels[:, 0], do_one_hot=True, get_list=False, device=device)
-                multi_dices.append(multi_dice.cpu().numpy())  # Move to CPU and convert to numpy
+                multi_dice = multi_class_dice(outputs, labels[:, 0], do_one_hot=True, get_list=True, device=device)
+                multi_dices.append([dice.cpu().numpy() for dice in multi_dice])  # Move to CPU and convert to numpy
 
                 # Flatten labels and predictions for confusion matrix and accuracy
                 all_labels.extend(labels.cpu().numpy().flatten())
@@ -32,8 +32,8 @@ class Validation:
 
         print(f"Example 3D visualizations saved in {Config.LOGS_FOLDER}")
         multi_dices_np = np.array(multi_dices)
-        mean_multi_dice = np.mean(multi_dices_np)
-        std_multi_dice = np.std(multi_dices_np)
+        mean_multi_dice = np.mean(multi_dices_np, axis=0)
+        std_multi_dice = np.std(multi_dices_np, axis=0)
 
         # Calculate confusion matrix
         conf_matrix = confusion_matrix(all_labels, all_predictions, labels=range(3))
@@ -66,7 +66,10 @@ class Validation:
             results (dict): Dictionary containing validation metrics.
         """
         print("\nValidation Results:")
-        print(f"Mean Multi-Dice: {results['mean_multi_dice']:.4f} +/- {results['std_multi_dice']:.4f}")
+        for i, (mean, std) in enumerate(zip(results['mean_multi_dice'], results['std_multi_dice'])):
+            print(f"Class {i} Dice: {mean:.4f} +/- {std:.4f}")
+        print(
+            f"Mean Multi-Dice: {np.mean(results['mean_multi_dice'][1:]):.4f} +/- {np.mean(results['std_multi_dice'][1:]):.4f}")
         print(f"Accuracy: {results['accuracy']:.4f}")
 
     @staticmethod
