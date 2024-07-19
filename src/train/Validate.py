@@ -81,10 +81,10 @@ class Validation:
             label_vol = labels[batch_idx, 0].cpu().numpy()
             pred_vol = predictions[batch_idx].cpu().numpy()
 
-            # Print volume statistics
-            Validation.print_volume_stats(input_vol, "Input")
-            Validation.print_volume_stats(label_vol, "Label")
-            Validation.print_volume_stats(pred_vol, "Prediction")
+            # # Print volume statistics
+            # Validation.print_volume_stats(input_vol, "Input")
+            # Validation.print_volume_stats(label_vol, "Label")
+            # Validation.print_volume_stats(pred_vol, "Prediction")
 
             # Create subplots
             fig = make_subplots(
@@ -219,4 +219,4 @@ class Validation:
         """
         model.load_state_dict(torch.load(model_path, map_location=device))
         model.to(device)
-        return cls.validate(model, val_loader, is_test_dataset)
+        return cls.validate(model, val_loader, device, is_test_dataset)
