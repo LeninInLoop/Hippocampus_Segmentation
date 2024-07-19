@@ -7,9 +7,9 @@ class Config:
     SLOPE_OF_LEAKY_RELU = 0.01
 
     # Training settings
-    TRAIN_RATIO = 0.6,  # 60% for training
-    VAL_RATIO = 0.1,  # 10% for validation
-    TEST_RATIO = 0.3,  # 30% for testing
+    TRAIN_RATIO = 0.6
+    VAL_RATIO = 0.2
+    TEST_RATIO = 0.2
     BATCH_SIZE = 16
     NUM_WORKERS = 2
     NUM_EPOCHS = 20

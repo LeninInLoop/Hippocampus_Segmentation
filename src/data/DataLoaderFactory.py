@@ -72,7 +72,6 @@ class DefaultDataLoaderFactory(DataLoaderFactory):
         train_size = int(self.train_ratio * total_size)
         val_size = int(self.val_ratio * total_size)
         test_size = total_size - train_size - val_size
-
         return random_split(dataset, [train_size, val_size, test_size])
 
     def _create_data_loader(self, dataset, shuffle):
