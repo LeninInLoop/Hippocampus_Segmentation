@@ -13,11 +13,7 @@ def dice_loss_coefficient(outputs: torch.Tensor, labels: torch.Tensor) -> torch.
     Returns:
         torch.Tensor: Dice loss (1 - Dice coefficient).
     """
-    eps = 1e-5
-    outputs, labels = outputs.float().flatten(), labels.float().flatten()
-    intersect = torch.dot(outputs, labels)
-    union = torch.sum(outputs) + torch.sum(labels)
-    dice = (2 * intersect + eps) / (union + eps)
+    dice = dice_coefficient(outputs, labels)
     return 1 - dice
 
 
@@ -64,8 +60,7 @@ def one_hot_encode(label: torch.Tensor, num_classes: int) -> torch.Tensor:
 
 
 def multi_class_dice_loss(outputs: torch.Tensor, labels: torch.Tensor, do_one_hot: bool = False,
-                          get_list: bool = False, device: torch.device = None) -> Union[
-    List[torch.Tensor], torch.Tensor]:
+                          get_list: bool = False, device: torch.device = None) -> Union[List[torch.Tensor], torch.Tensor]:
     """
     Compute the multi-class Dice coefficient.
 
