@@ -37,40 +37,43 @@ class DataLoaderFactory(ABC):
 
 
 class DefaultDataLoaderFactory(DataLoaderFactory):
-    def __init__(self, dataset_strategy, transform, train_val_ratio, test_ratio, batch_size, num_workers):
+    def __init__(self, dataset_strategy, transform, train_ratio, val_ratio, test_ratio, batch_size, num_workers):
         """
         Initialize the DefaultDataLoaderFactory.
 
         Args:
             dataset_strategy: A strategy object for creating the dataset.
             transform: The data transformation to be applied to the dataset.
-            train_val_ratio (float): The ratio of the dataset to use for training (0.0 to 1.0).
-            test_ratio (float): The ratio of the dataset to use for testing (0.0 to 1.0).
+            train_ratio (float): The ratio of the dataset to use for training (e.g., 0.6 for 60%).
+            val_ratio (float): The ratio of the dataset to use for validation (e.g., 0.1 for 10%).
+            test_ratio (float): The ratio of the dataset to use for testing (e.g., 0.3 for 30%).
             batch_size (int): The number of samples per batch.
             num_workers (int): The number of subprocesses to use for data loading.
         """
         self.dataset_strategy = dataset_strategy
         self.transform = transform
-        self.train_val_ratio = train_val_ratio
+        self.train_ratio = train_ratio
+        self.val_ratio = val_ratio
         self.test_ratio = test_ratio
         self.batch_size = batch_size
         self.num_workers = num_workers
 
         self.full_dataset = self.dataset_strategy.create_dataset(self.transform)
-        self.train_val_dataset, self.test_dataset = self._split_dataset(self.full_dataset, self.test_ratio)
-        self.train_dataset, self.val_dataset = self._split_dataset(self.train_val_dataset, self.train_val_ratio)
+        self.train_dataset, self.val_dataset, self.test_dataset = self._split_dataset(self.full_dataset)
 
-    @staticmethod
-    def _split_dataset(dataset, split_ratio):
+    def _split_dataset(self, dataset):
         """
-        Split the full dataset into training and validation or test sets.
+        Split the full dataset into training, validation, and test sets.
 
         Returns:
-            A tuple containing the training and validation or test datasets.
+            A tuple containing the training, validation, and test datasets.
         """
         total_size = len(dataset)
-        split_size = int(split_ratio * total_size)
-        return random_split(dataset, [split_size, total_size - split_size])
+        train_size = int(self.train_ratio * total_size)
+        val_size = int(self.val_ratio * total_size)
+        test_size = total_size - train_size - val_size
+
+        return random_split(dataset, [train_size, val_size, test_size])
 
     def _create_data_loader(self, dataset, shuffle):
         """

@@ -67,7 +67,7 @@ class Validation:
         """
         print("\nValidation Results:")
         for i, (mean, std) in enumerate(zip(results['mean_multi_dice'], results['std_multi_dice'])):
-            print(f"Class {i} Dice: {mean:.4f} +/- {std:.4f}")
+            print(f"Class {i + 1} Dice: {mean:.4f} +/- {std:.4f}")
         print(
             f"Mean Multi-Dice: {np.mean(results['mean_multi_dice'][1:]):.4f} +/- {np.mean(results['std_multi_dice'][1:]):.4f}")
         print(f"Accuracy: {results['accuracy']:.4f}")

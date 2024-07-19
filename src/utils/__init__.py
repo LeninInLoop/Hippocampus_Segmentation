@@ -12,6 +12,8 @@ import torch.optim as optim
 import time
 import os.path
 from torch.optim import Adam
+from torch.optim import AdamW
+from torch.optim import RMSprop
 from tqdm import tqdm
 import matplotlib.pyplot as plt
 import seaborn as sns

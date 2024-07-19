@@ -30,7 +30,7 @@ def print_vanderbilt_dataset_info(data_json=Config.VANDERBILT_DATA_JSON):
         ("Description", data_json['description']),
         ("Reference", data_json['reference']),
         ("Licence", data_json['licence']),
-        ("Release Version", data_json['relase']),
+        ("Release Version", data_json['release']),
         ("Tensor Image Size", data_json['tensorImageSize']),
         ("Modality", data_json['modality']['0']),
         ("Number of Training Images", data_json['numTraining']),
@@ -96,8 +96,9 @@ def print_config():
             ("DATA_JSON", Config.VANDERBILT_DATA_JSON)
         ]),
         ("Training Settings", [
-            ("DATASET_TEST_SPLIT_RATIO", Config.TEST_SPLIT_RATIO),
-            ("TRAIN_AND_VAL_SPLIT_RATIO", Config.TRAIN_AND_VAL_SPLIT_RATIO),
+            ("TRAIN_SPLIT_RATIO", Config.TRAIN_RATIO),
+            ("VAL_SPLIT_RATIO", Config.VAL_RATIO),
+            ("TEST_SPLIT_RATIO", Config.TEST_RATIO),
             ("BATCH_SIZE", Config.BATCH_SIZE),
             ("NUM_WORKERS", Config.NUM_WORKERS),
             ("NUM_EPOCHS", Config.NUM_EPOCHS),

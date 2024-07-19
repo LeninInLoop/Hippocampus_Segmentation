@@ -1,7 +1,7 @@
 import os.path
 from src.train import Train, Validation
 from src.data import *
-from src.models import UNet3D, UNet3DVisualizer
+from src.models import UNet3D
 
 
 def setup_gpu():
@@ -32,6 +32,10 @@ def get_optimizer(model):
     """Get the optimizer based on configuration."""
     if Config.OPTIMIZER == 'Adam':
         return Adam(model.parameters(), lr=Config.LEARNING_RATE)
+    elif Config.OPTIMIZER == 'AdamW':
+        return AdamW(model.parameters(), lr=Config.LEARNING_RATE)
+    elif Config.OPTIMIZER == 'RMSprop':
+        return RMSprop(model.parameters(), lr=Config.LEARNING_RATE)
     # Add more optimizer options here if needed
     raise ValueError(f"Unsupported optimizer: {Config.OPTIMIZER}")
 
@@ -42,8 +46,9 @@ def setup_data_loaders():
     hippocampus_factory = DefaultDataLoaderFactory(
         dataset_strategy=hippocampus_strategy,
         transform=train_transform,
-        train_val_ratio=Config.TRAIN_AND_VAL_SPLIT_RATIO,
-        test_ratio=Config.TEST_SPLIT_RATIO,
+        train_ratio=Config.TRAIN_RATIO,
+        test_ratio=Config.TRAIN_RATIO,
+        val_ratio=Config.VAL_RATIO,
         batch_size=Config.BATCH_SIZE,
         num_workers=Config.NUM_WORKERS
     )
@@ -91,7 +96,11 @@ def main():
     trainer.start_training()
 
     print("Validating Using validation Dataset:")
-    Validation.load_and_validate(model, Config.BEST_MODEL_SAVE_PATH, val_loader, device)
+    Validation.load_and_validate(
+        model=model,
+        model_path=Config.BEST_MODEL_SAVE_PATH,
+        val_loader=val_loader,
+        device=device)
 
     print("Validating Using Test Dataset:")
     Validation.load_and_validate(model, Config.BEST_MODEL_SAVE_PATH, test_loader, device, is_test_dataset=True)

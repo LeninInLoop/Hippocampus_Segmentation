@@ -120,6 +120,7 @@ class Train:
 
         Args:
             filename (str): Name of the file to save the checkpoint.
+            path (str): Path to save the checkpoint.
         """
         if Config.LOGS_FOLDER is None:
             return

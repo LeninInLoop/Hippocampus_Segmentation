@@ -24,10 +24,10 @@ def InitialConvolutionalLayer(in_channels, middle_channel, out_channels):
     conv = nn.Sequential(
         nn.Conv3d(in_channels=in_channels, out_channels=middle_channel, kernel_size=3, padding=1),
         nn.BatchNorm3d(middle_channel),
-        nn.ReLU(inplace=False),
+        nn.LeakyReLU(inplace=False, negative_slope=Config.SLOPE_OF_LEAKY_RELU),
         nn.Conv3d(in_channels=middle_channel, out_channels=out_channels, kernel_size=3, padding=1),
         nn.BatchNorm3d(out_channels),
-        nn.ReLU(inplace=False)
+        nn.LeakyReLU(inplace=False, negative_slope=Config.SLOPE_OF_LEAKY_RELU)
     )
     return conv
 
@@ -90,10 +90,10 @@ def DownConvolutionalLayer(in_channels, out_channels):
     conv = nn.Sequential(
         nn.Conv3d(in_channels=in_channels, out_channels=out_channels, kernel_size=3, padding=1),
         nn.BatchNorm3d(out_channels),
-        nn.ReLU(inplace=False),
+        nn.LeakyReLU(inplace=False, negative_slope=Config.SLOPE_OF_LEAKY_RELU),
         nn.Conv3d(in_channels=out_channels, out_channels=out_channels, kernel_size=3, padding=1),
         nn.BatchNorm3d(out_channels),
-        nn.ReLU(inplace=False)
+        nn.LeakyReLU(inplace=False, negative_slope=Config.SLOPE_OF_LEAKY_RELU)
     )
     return conv
 
@@ -131,10 +131,10 @@ def UpConvolutionalLayer(in_channels, out_channels):
     conv = nn.Sequential(
         nn.Conv3d(in_channels=in_channels, out_channels=out_channels, kernel_size=3, padding=1),
         nn.BatchNorm3d(out_channels),
-        nn.ReLU(inplace=False),
+        nn.LeakyReLU(inplace=False, negative_slope=Config.SLOPE_OF_LEAKY_RELU),
         nn.Conv3d(in_channels=out_channels, out_channels=out_channels, kernel_size=3, padding=1),
         nn.BatchNorm3d(out_channels),
-        nn.ReLU(inplace=False)
+        nn.LeakyReLU(inplace=False, negative_slope=Config.SLOPE_OF_LEAKY_RELU)
     )
     return conv
 
