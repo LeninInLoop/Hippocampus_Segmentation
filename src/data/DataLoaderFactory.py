@@ -123,7 +123,22 @@ class DefaultDataLoaderFactory(DataLoaderFactory):
 
 
 class KFoldDataLoaderFactory(DataLoaderFactory):
+    """
+    A factory class for creating data loaders for k-fold cross-validation.
+    This class prepares the dataset for k-fold cross-validation and provides methods to create
+    train and validation data loaders for each fold.
+    """
     def __init__(self, dataset_strategy, transform, k_folds, batch_size, num_workers):
+        """
+        Initialize the KFoldDataLoaderFactory.
+
+        Args:
+            dataset_strategy: Strategy for creating the dataset.
+            transform: Transformations to apply to the dataset.
+            k_folds (int): Number of folds for cross-validation.
+            batch_size (int): Batch size for data loaders.
+            num_workers (int): Number of worker processes for data loading.
+        """
         self.dataset = dataset_strategy.create_dataset(transform)
         self.k_folds = k_folds
         self.batch_size = batch_size
@@ -132,23 +147,48 @@ class KFoldDataLoaderFactory(DataLoaderFactory):
         self.folds = None
 
     def prepare_folds(self):
-        kfold = KFold(n_splits=self.k_folds, shuffle=True)
+        """
+        Prepare the k-fold splits of the dataset.
+        This method should be called before creating any data loaders.
+        """
+        kfold = KFold(n_splits=self.k_folds, shuffle=True, random_state=42)
         self.folds = list(kfold.split(self.dataset))
 
     def create_train_loader(self):
+        """
+        Create a DataLoader for the training data of the current fold.
+
+        Returns:
+            DataLoader: A DataLoader for the training data.
+        """
         train_indices, _ = self.folds[self.current_fold]
         train_sampler = SubsetRandomSampler(train_indices)
         return DataLoader(self.dataset, batch_size=self.batch_size, sampler=train_sampler, num_workers=self.num_workers)
 
     def create_val_loader(self):
+        """
+        Create a DataLoader for the validation data of the current fold.
+
+        Returns:
+            DataLoader: A DataLoader for the validation data.
+        """
         _, val_indices = self.folds[self.current_fold]
         val_sampler = SubsetRandomSampler(val_indices)
         return DataLoader(self.dataset, batch_size=self.batch_size, sampler=val_sampler, num_workers=self.num_workers)
 
     def create_test_loader(self):
-        # In k-fold cross-validation, we typically don't have a separate test set
-        # You might want to use a held-out set or just return None
+        """
+        Create a DataLoader for the test data.
+        In k-fold cross-validation, we typically don't have a separate test set.
+
+        Returns:
+            None: As there's no separate test set in k-fold cross-validation.
+        """
         return None
 
     def next_fold(self):
+        """
+        Move to the next fold.
+        This method should be called after completing training and validation on the current fold.
+        """
         self.current_fold = (self.current_fold + 1) % self.k_folds
