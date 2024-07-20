@@ -1,8 +1,12 @@
 from abc import ABC, abstractmethod
 from .Train import *
+from ..data import DataSetLoader
 
 
 class TrainingStrategy(ABC):
+    def __init__(self, data_loader_factory):
+        self.data_loader_factory = data_loader_factory
+
     @abstractmethod
     def prepare_data(self):
         pass
@@ -28,10 +32,12 @@ class TrainingStrategy(ABC):
 
 
 class StandardTrainingStrategy(TrainingStrategy):
-    def __init__(self, train_loader, val_loader, test_loader):
-        self.train_loader = train_loader
-        self.val_loader = val_loader
-        self.test_loader = test_loader
+    def __init__(self, data_loader_factory):
+        super().__init__(data_loader_factory)
+        dataset = DataSetLoader(data_loader_factory)
+        self.train_loader = dataset.train_loader
+        self.val_loader = dataset.val_loader
+        self.test_loader = dataset.test_loader
 
     def prepare_data(self):
         # No additional preparation needed
@@ -64,7 +70,6 @@ class StandardTrainingStrategy(TrainingStrategy):
 class KFoldTrainingStrategy(TrainingStrategy):
     def __init__(self, data_loader_factory):
         super().__init__(data_loader_factory)
-        self.data_loader_factory = data_loader_factory
         self.fold_results = []
 
     def prepare_data(self):

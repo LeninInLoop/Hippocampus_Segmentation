@@ -30,7 +30,7 @@ def print_vanderbilt_dataset_info(data_json=Config.VANDERBILT_DATA_JSON):
         ("Description", data_json['description']),
         ("Reference", data_json['reference']),
         ("Licence", data_json['licence']),
-        ("Release Version", data_json['release']),
+        ("Release Version", data_json['relase']),
         ("Tensor Image Size", data_json['tensorImageSize']),
         ("Modality", data_json['modality']['0']),
         ("Number of Training Images", data_json['numTraining']),

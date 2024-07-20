@@ -6,3 +6,4 @@ from .Transform import *
 from .DataSetLoader import DataSetLoader
 from .DataSetStrategies import VanderbiltHippocampusDatasetStrategy, OtherDatasetStrategy
 from .DataLoaderFactory import DefaultDataLoaderFactory
+from src.data.DataLoaderFactory import KFoldDataLoaderFactory
