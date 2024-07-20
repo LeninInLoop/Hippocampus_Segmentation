@@ -1,5 +1,7 @@
 from abc import ABC, abstractmethod
 from src.utils import DataLoader, random_split
+from torch.utils.data import SubsetRandomSampler, DataLoader
+from sklearn.model_selection import KFold
 
 
 class DataLoaderFactory(ABC):
@@ -118,3 +120,35 @@ class DefaultDataLoaderFactory(DataLoaderFactory):
             A DataLoader object for the validation dataset.
         """
         return self._create_data_loader(self.test_dataset, shuffle=True)
+
+
+class KFoldDataLoaderFactory(DataLoaderFactory):
+    def __init__(self, dataset_strategy, transform, k_folds, batch_size, num_workers):
+        self.dataset = dataset_strategy.create_dataset(transform)
+        self.k_folds = k_folds
+        self.batch_size = batch_size
+        self.num_workers = num_workers
+        self.current_fold = 0
+        self.folds = None
+
+    def prepare_folds(self):
+        kfold = KFold(n_splits=self.k_folds, shuffle=True)
+        self.folds = list(kfold.split(self.dataset))
+
+    def create_train_loader(self):
+        train_indices, _ = self.folds[self.current_fold]
+        train_sampler = SubsetRandomSampler(train_indices)
+        return DataLoader(self.dataset, batch_size=self.batch_size, sampler=train_sampler, num_workers=self.num_workers)
+
+    def create_val_loader(self):
+        _, val_indices = self.folds[self.current_fold]
+        val_sampler = SubsetRandomSampler(val_indices)
+        return DataLoader(self.dataset, batch_size=self.batch_size, sampler=val_sampler, num_workers=self.num_workers)
+
+    def create_test_loader(self):
+        # In k-fold cross-validation, we typically don't have a separate test set
+        # You might want to use a held-out set or just return None
+        return None
+
+    def next_fold(self):
+        self.current_fold = (self.current_fold + 1) % self.k_folds

@@ -1,7 +1,9 @@
 import os.path
-from src.train import Train, Validation
+from src.train import *
 from src.data import *
 from src.models import UNet3D
+
+use_kfold = True
 
 
 def setup_gpu():
@@ -83,27 +85,45 @@ def main():
     model = initialize_model(device)
     optimizer = get_optimizer(model)
 
-    # Setup data loaders
-    train_loader, val_loader, test_loader = setup_data_loaders()
+    # Setup data loader factory
+    hippocampus_strategy = VanderbiltHippocampusDatasetStrategy()
 
-    # Print batch info
-    print_batch_info(train_loader, "Train")
-    print_batch_info(val_loader, "Val")
-    print_batch_info(test_loader, "Test")
+    if use_kfold:
+        data_loader_factory = KFoldDataLoaderFactory(
+            dataset_strategy=hippocampus_strategy,
+            transform=train_transform,
+            k_folds=5,
+            batch_size=Config.BATCH_SIZE,
+            num_workers=Config.NUM_WORKERS
+        )
+        strategy = KFoldTrainingStrategy(data_loader_factory)
+    else:
+        data_loader_factory = DefaultDataLoaderFactory(
+            dataset_strategy=hippocampus_strategy,
+            transform=train_transform,
+            train_ratio=Config.TRAIN_RATIO,
+            val_ratio=Config.VAL_RATIO,
+            test_ratio=Config.TEST_RATIO,
+            batch_size=Config.BATCH_SIZE,
+            num_workers=Config.NUM_WORKERS
+        )
+        strategy = StandardTrainingStrategy(data_loader_factory)
 
-    # Initialize and start training
-    trainer = Train(model, device, train_loader, val_loader, optimizer)
-    trainer.start_training()
+    # Execute training
+    val_results, final_results = strategy.execute(model, device, optimizer)
 
-    print("Validating Using validation Dataset:")
-    Validation.load_and_validate(
-        model=model,
-        model_path=Config.BEST_MODEL_SAVE_PATH,
-        val_loader=val_loader,
-        device=device)
+    # Process results
+    if isinstance(val_results, list):
+        # K-fold results
+        print("K-fold cross-validation results:")
+        for i, result in enumerate(val_results):
+            print(f"Fold {i + 1}: {result}")
+        print(f"Average performance: {sum(val_results) / len(val_results)}")
+    else:
+        # Standard training result
+        print(f"Validation result: {val_results}")
 
-    print("Validating Using Test Dataset:")
-    Validation.load_and_validate(model, Config.BEST_MODEL_SAVE_PATH, test_loader, device, is_test_dataset=True)
+    print(f"Final test result: {final_results}")
 
     # visualizer = UNet3DVisualizer(model)
     # visualizer.generate_diagram((16, 1, 48, 64, 48), filename="ModelDiagram", format="png")
