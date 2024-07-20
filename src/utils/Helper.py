@@ -96,6 +96,8 @@ def print_config():
             ("DATA_JSON", Config.VANDERBILT_DATA_JSON)
         ]),
         ("Training Settings", [
+            ("USE_KFOLD", Config.USE_KFOLD),
+            ("NUM_OF_FOLDS", Config.NUM_OF_FOLDS),
             ("TRAIN_SPLIT_RATIO", Config.TRAIN_RATIO),
             ("VAL_SPLIT_RATIO", Config.VAL_RATIO),
             ("TEST_SPLIT_RATIO", Config.TEST_RATIO),

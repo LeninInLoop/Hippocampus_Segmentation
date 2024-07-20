@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 from .Train import *
 from ..data import DataSetLoader
+from .Validate import Validation
 
 
 class TrainingStrategy(ABC):
@@ -74,13 +75,6 @@ class TrainingStrategy(ABC):
         Returns:
             A tuple containing the validation result and final validation result.
         """
-        self.prepare_data()
-        self.train(model, device, optimizer)
-        val_result = self.validate(model, device)
-        final_results = self.final_validation(model, device)
-        return val_result, final_results
-
-    def execute(self, model, device, optimizer):
         self.prepare_data()
         self.train(model, device, optimizer)
         val_result = self.validate(model, device)

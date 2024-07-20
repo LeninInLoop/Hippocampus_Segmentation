@@ -3,8 +3,6 @@ from src.train import *
 from src.data import *
 from src.models import UNet3D
 
-use_kfold = True
-
 
 def setup_gpu():
     """Set up and configure GPU if available."""
@@ -88,11 +86,11 @@ def main():
     # Setup data loader factory
     hippocampus_strategy = VanderbiltHippocampusDatasetStrategy()
 
-    if use_kfold:
+    if Config.USE_KFOLD:
         data_loader_factory = KFoldDataLoaderFactory(
             dataset_strategy=hippocampus_strategy,
             transform=train_transform,
-            k_folds=5,
+            k_folds=Config.NUM_OF_FOLDS,
             batch_size=Config.BATCH_SIZE,
             num_workers=Config.NUM_WORKERS
         )

@@ -7,6 +7,8 @@ class Config:
     SLOPE_OF_LEAKY_RELU = 0.01
 
     # Training settings
+    USE_KFOLD = True
+    NUM_OF_FOLDS = 5
     TRAIN_RATIO = 0.6
     VAL_RATIO = 0.2
     TEST_RATIO = 0.2
