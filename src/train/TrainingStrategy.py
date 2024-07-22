@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 from .Train import *
 from ..data import DataSetLoader
 from .Validate import Validation
+from typing import List, Dict, Union
 
 
 class TrainingStrategy(ABC):
@@ -188,8 +189,11 @@ class KFoldTrainingStrategy(TrainingStrategy):
             optimizer: The optimizer to use for training.
         """
         for fold in range(self.data_loader_factory.k_folds):
-            print(f"Fold {self.data_loader_factory.current_fold + 1}/{self.data_loader_factory.k_folds}")
             print()
+            print("\n" + "=" * 50)
+            print()
+            print(f"Fold {self.data_loader_factory.current_fold + 1}/{self.data_loader_factory.k_folds}")
+            print("\n" + "=" * 50)
             fold_dir = os.path.join(Config.LOGS_FOLDER, f'fold{fold + 1}')
             os.makedirs(fold_dir, exist_ok=True)
 
@@ -213,14 +217,15 @@ class KFoldTrainingStrategy(TrainingStrategy):
         Returns:
             The validation result for the current fold.
         """
+        print()
         print(f"Validating fold {self.data_loader_factory.current_fold + 1}/{self.data_loader_factory.k_folds}")
         val_loader = self.data_loader_factory.create_val_loader()
         result = Validation.load_and_validate(
             model=model,
-            model_path=Config.LOGS_FOLDER + f'fold{self.data_loader_factory.current_fold + 1}' + '/best_model.pth',
+            model_path=Config.LOGS_FOLDER + f'/fold{self.data_loader_factory.current_fold + 1}' + '/best_model.pth',
             val_loader=val_loader,
             device=device,
-            output_dir=Config.LOGS_FOLDER + f'fold{self.data_loader_factory.current_fold + 1}',
+            output_dir=Config.LOGS_FOLDER + f'/fold{self.data_loader_factory.current_fold + 1}',
         )
         self.fold_results.append(result)
         return result
@@ -294,21 +299,22 @@ class KFoldTrainingStrategy(TrainingStrategy):
         # Average mean_multi_dice and std_multi_dice
         for i in range(num_classes):
             avg_result['mean_multi_dice'].append(
-                np.mean([fold_result['mean_multi_dice'][i] for fold_result in results]))
-            avg_result['std_multi_dice'].append(np.mean([fold_result['std_multi_dice'][i] for fold_result in results]))
+                float(np.mean([fold_result['mean_multi_dice'][i] for fold_result in results])))
+            avg_result['std_multi_dice'].append(
+                float(np.mean([fold_result['std_multi_dice'][i] for fold_result in results])))
 
         # Sum confusion matrices and then normalize
-        sum_conf_matrix = sum(fold_result['confusion_matrix'] for fold_result in results)
-        avg_result['confusion_matrix'] = sum_conf_matrix
-        avg_result['norm_confusion_matrix'] = sum_conf_matrix.astype('float') / sum_conf_matrix.sum(axis=1)[:,
-                                                                                np.newaxis]
+        sum_conf_matrix = np.sum([np.array(fold_result['confusion_matrix']) for fold_result in results], axis=0)
+        avg_result['confusion_matrix'] = sum_conf_matrix.tolist()
+        row_sums = sum_conf_matrix.sum(axis=1)
+        avg_result['norm_confusion_matrix'] = (sum_conf_matrix / row_sums[:, np.newaxis]).tolist()
 
         # Average accuracy
-        avg_result['accuracy'] = np.mean([fold_result['accuracy'] for fold_result in results])
+        avg_result['accuracy'] = float(np.mean([fold_result['accuracy'] for fold_result in results]))
 
         # Calculate overall mean and std of Dice scores
-        overall_mean_dice = np.mean(avg_result['mean_multi_dice'])
-        overall_std_dice = np.mean(avg_result['std_multi_dice'])
+        overall_mean_dice = float(np.mean(avg_result['mean_multi_dice']))
+        overall_std_dice = float(np.mean(avg_result['std_multi_dice']))
 
         avg_result['overall_mean_dice'] = overall_mean_dice
         avg_result['overall_std_dice'] = overall_std_dice
@@ -316,7 +322,8 @@ class KFoldTrainingStrategy(TrainingStrategy):
         return avg_result
 
     @staticmethod
-    def save_final_results(results, filepath):
+    def save_final_results(results: Dict[str, Union[float, List]], filepath: str) -> None:
+        import json
         with open(filepath, 'w') as f:
             json.dump(results, f, indent=4)
 
@@ -333,8 +340,5 @@ class KFoldTrainingStrategy(TrainingStrategy):
             A tuple containing the list of fold results and the final average result.
         """
         self.prepare_data()
-        for _ in range(self.data_loader_factory.k_folds):
-            self.train(model, device, optimizer)
-            self.validate(model, device)
-            self.data_loader_factory.next_fold()
+        self.train(model, device, optimizer)
         return self.fold_results, self.final_validation(model, device)

@@ -40,6 +40,25 @@ def get_optimizer(model):
     raise ValueError(f"Unsupported optimizer: {Config.OPTIMIZER}")
 
 
+def print_fold_results(fold_num, results, is_test=False):
+    result_type = "Test" if is_test else "Cross-Validation"
+    print(f"\nFold {fold_num} {result_type} Results:")
+    print("-" * 40)
+    print(f"Mean Multi-Dice: {results['mean_multi_dice']}")
+    print(f"Std Multi-Dice:  {results['std_multi_dice']}")
+    print(f"Accuracy: {results['accuracy']:.4f}")
+
+
+def print_average_results(results):
+    print("\nAverage Test Results Across All Folds:")
+    print("=" * 40)
+    print(f"Mean Multi-Dice: {results['mean_multi_dice']}")
+    print(f"Std Multi-Dice:  {results['std_multi_dice']}")
+    print(f"Accuracy: {results['accuracy']:.4f}")
+    print(f"Overall Mean Dice: {results['overall_mean_dice']:.4f}")
+    print(f"Overall Std Dice:  {results['overall_std_dice']:.4f}")
+
+
 def main():
     # Setup device
     if not Config.USE_GPU:
@@ -92,29 +111,25 @@ def main():
 
     # Process results
     if Config.USE_KFOLD:
-        print("K-fold cross-validation results:")
+        print("\nK-fold Cross-Validation Results:")
+        print("================================")
         for i, result in enumerate(val_results):
-            print(f"Fold {i + 1}:")
-            for metric, value in result.items():
-                print(f"  {metric}: {value}")
+            print_fold_results(i + 1, result)
 
-        print("\nFinal test results:")
-        for i, result in enumerate(final_results[0]):  # final_results[0] contains individual fold results
-            print(f"Fold {i + 1}:")
-            for metric, value in result.items():
-                print(f"  {metric}: {value}")
+        print("\nFinal Test Results:")
+        print("===================")
+        for i, result in enumerate(final_results[0]):
+            print_fold_results(i + 1, result, is_test=True)
 
-        print("\nAverage test results across all folds:")
-        for metric, value in final_results[1].items():  # final_results[1] contains averaged results
-            print(f"  {metric}: {value}")
+        print_average_results(final_results[1])
     else:
-        print("Validation results:")
-        for metric, value in val_results.items():
-            print(f"  {metric}: {value}")
+        print("\nValidation Results:")
+        print("===================")
+        print_fold_results(1, val_results)
 
-        print("\nFinal test results:")
-        for metric, value in final_results.items():
-            print(f"  {metric}: {value}")
+        print("\nFinal Test Results:")
+        print("===================")
+        print_fold_results(1, final_results, is_test=True)
 
     # Uncomment the following lines if you want to generate a model diagram
     # visualizer = UNet3DVisualizer(model)

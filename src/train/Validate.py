@@ -48,12 +48,12 @@ class Validation:
         accuracy = accuracy_score(all_labels, all_predictions)
 
         results = {
-            "multi_dices": multi_dices,
-            "mean_multi_dice": mean_multi_dice,
-            "std_multi_dice": std_multi_dice,
-            "confusion_matrix": conf_matrix,
-            "norm_confusion_matrix": norm_conf_matrix,
-            "accuracy": accuracy,
+            "multi_dices": [dice for dice in multi_dices],
+            "mean_multi_dice": mean_multi_dice.tolist(),
+            "std_multi_dice": std_multi_dice.tolist(),
+            "confusion_matrix": conf_matrix.tolist(),
+            "norm_confusion_matrix": norm_conf_matrix.tolist(),
+            "accuracy": float(accuracy)
         }
 
         cls.print_results(results)
@@ -203,7 +203,7 @@ class Validation:
         img_path = os.path.join(output_dir, 'confusion_matrices.png')
         plt.savefig(img_path)
         plt.close()  # Close the figure to free up memory
-        print(f"Confusion matrices saved as image: {img_path}")
+        print(f"Confusion matrices saved as image: {img_path}\n")
 
     @classmethod
     def load_and_validate(cls, model, model_path, val_loader, device, is_test_dataset=False, output_dir=None):
