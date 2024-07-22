@@ -9,6 +9,7 @@ class TrainingStrategy(ABC):
     Abstract base class for training strategies.
     This class defines the interface for different training strategies (e.g., standard training, k-fold cross-validation).
     """
+
     def __init__(self, data_loader_factory):
         """
         Initialize the TrainingStrategy.
@@ -87,6 +88,7 @@ class StandardTrainingStrategy(TrainingStrategy):
     A training strategy for standard (non-k-fold) training.
     This strategy uses separate train, validation, and test datasets.
     """
+
     def __init__(self, data_loader_factory):
         """
         Initialize the StandardTrainingStrategy.
@@ -113,7 +115,7 @@ class StandardTrainingStrategy(TrainingStrategy):
             device: The device to use for training.
             optimizer: The optimizer to use for training.
         """
-        trainer = Train(model, device, self.train_loader, self.val_loader, optimizer)
+        trainer = Train(model, device, self.train_loader, self.val_loader, optimizer, output_dir=Config.LOGS_FOLDER)
         trainer.start_training()
 
     def validate(self, model, device):
@@ -161,6 +163,7 @@ class KFoldTrainingStrategy(TrainingStrategy):
     A training strategy for k-fold cross-validation.
     This strategy trains and validates the model k times, each time using a different fold as the validation set.
     """
+
     def __init__(self, data_loader_factory):
         """
         Initialize the KFoldTrainingStrategy.
@@ -184,10 +187,17 @@ class KFoldTrainingStrategy(TrainingStrategy):
             device: The device to use for training.
             optimizer: The optimizer to use for training.
         """
-        train_loader = self.data_loader_factory.create_train_loader()
-        val_loader = self.data_loader_factory.create_val_loader()
-        trainer = Train(model, device, train_loader, val_loader, optimizer)
-        trainer.start_training()
+        for fold in range(self.data_loader_factory.k_folds):
+            fold_dir = os.path.join(Config.LOGS_FOLDER, f'fold{fold + 1}')
+            os.makedirs(fold_dir, exist_ok=True)
+
+            train_loader = self.data_loader_factory.create_train_loader()
+            val_loader = self.data_loader_factory.create_val_loader()
+
+            trainer = Train(model, device, train_loader, val_loader, optimizer, output_dir=fold_dir)
+            trainer.start_training()
+
+            self.data_loader_factory.next_fold()
 
     def validate(self, model, device):
         """
@@ -204,7 +214,7 @@ class KFoldTrainingStrategy(TrainingStrategy):
         val_loader = self.data_loader_factory.create_val_loader()
         result = Validation.load_and_validate(
             model=model,
-            model_path=Config.BEST_MODEL_SAVE_PATH,
+            model_path=os.path.join(Config.LOGS_FOLDER, f'fold{self.data_loader_factory.current_fold + 1}', 'best_model.pth'),
             val_loader=val_loader,
             device=device
         )
@@ -222,8 +232,89 @@ class KFoldTrainingStrategy(TrainingStrategy):
         Returns:
             The average validation result across all folds.
         """
-        print("Final validation using average of fold validations:")
-        return sum(self.fold_results) / len(self.fold_results)
+        test_loader = self.data_loader_factory.create_test_loader()
+        test_dir = os.path.join(Config.LOGS_FOLDER, 'test_results')
+        os.makedirs(test_dir, exist_ok=True)
+
+        final_results = []
+        for fold in range(self.data_loader_factory.k_folds):
+            best_model_path = os.path.join(Config.LOGS_FOLDER, f'fold{fold + 1}', 'best_model.pth')
+            model.load_state_dict(torch.load(best_model_path))
+            fold_result = Validation.validate(
+                model,
+                test_loader,
+                device,
+                is_test_dataset=True,
+                output_dir=os.path.join(test_dir, f'fold{fold + 1}')
+            )
+            final_results.append(fold_result)
+
+        # Compute average results across folds
+        avg_result = self.average_results(final_results)
+
+        # Save average results
+        self.save_final_results(avg_result, os.path.join(test_dir, 'average_results.json'))
+
+        return final_results, avg_result
+
+    @staticmethod
+    def average_results(results):
+        """
+        Average the results across all folds.
+
+        Args:
+        results (list): A list of dictionaries, each containing the results for one fold.
+
+        Returns:
+        dict: A dictionary containing the averaged results across all folds.
+        """
+        if not results:
+            return {}
+
+        avg_result = {
+            "multi_dices": [],
+            "mean_multi_dice": [],
+            "std_multi_dice": [],
+            "confusion_matrix": None,
+            "norm_confusion_matrix": None,
+            "accuracy": 0
+        }
+
+        num_folds = len(results)
+        num_classes = len(results[0]['mean_multi_dice'])
+
+        # Average multi_dices
+        all_multi_dices = [fold_result['multi_dices'] for fold_result in results]
+        avg_result['multi_dices'] = np.mean(all_multi_dices, axis=0).tolist()
+
+        # Average mean_multi_dice and std_multi_dice
+        for i in range(num_classes):
+            avg_result['mean_multi_dice'].append(
+                np.mean([fold_result['mean_multi_dice'][i] for fold_result in results]))
+            avg_result['std_multi_dice'].append(np.mean([fold_result['std_multi_dice'][i] for fold_result in results]))
+
+        # Sum confusion matrices and then normalize
+        sum_conf_matrix = sum(fold_result['confusion_matrix'] for fold_result in results)
+        avg_result['confusion_matrix'] = sum_conf_matrix
+        avg_result['norm_confusion_matrix'] = sum_conf_matrix.astype('float') / sum_conf_matrix.sum(axis=1)[:,
+                                                                                np.newaxis]
+
+        # Average accuracy
+        avg_result['accuracy'] = np.mean([fold_result['accuracy'] for fold_result in results])
+
+        # Calculate overall mean and std of Dice scores
+        overall_mean_dice = np.mean(avg_result['mean_multi_dice'])
+        overall_std_dice = np.mean(avg_result['std_multi_dice'])
+
+        avg_result['overall_mean_dice'] = overall_mean_dice
+        avg_result['overall_std_dice'] = overall_std_dice
+
+        return avg_result
+
+    @staticmethod
+    def save_final_results(results, filepath):
+        with open(filepath, 'w') as f:
+            json.dump(results, f, indent=4)
 
     def execute(self, model, device, optimizer):
         """

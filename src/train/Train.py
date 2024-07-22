@@ -6,7 +6,7 @@ class Train:
     A class to handle the training process of a deep learning model.
     """
 
-    def __init__(self, model, device, train_loader, val_loader, optimizer):
+    def __init__(self, model, device, train_loader, val_loader, optimizer, output_dir):
         """
         Initialize the Train class with model and training parameters.
 
@@ -22,13 +22,13 @@ class Train:
         self.train_loader = train_loader
         self.val_loader = val_loader
         self.optimizer = optimizer
-        self._create_logs_folder()
+        self._create_output_dir()
+        self.output_dir = output_dir
 
-    @staticmethod
-    def _create_logs_folder():
+    def _create_output_dir(self):
         """Create a folder for storing logs and checkpoints if it doesn't exist."""
-        if not os.path.isdir(Config.LOGS_FOLDER):
-            os.makedirs(Config.LOGS_FOLDER, exist_ok=True)
+        if not os.path.isdir(self.output_dir):
+            os.makedirs(self.output_dir, exist_ok=True)
 
     def train_epoch(self):
         """
@@ -107,7 +107,7 @@ class Train:
             best_val_loss (float): Best validation loss so far.
         """
         if val_loss < best_val_loss:
-            self._save_checkpoint(path=Config.BEST_MODEL_SAVE_PATH)
+            self._save_checkpoint(path=self.output_dir + "/best_model.pth")
             print(f"New best model saved with validation loss: {val_loss:.4f}")
 
         if (epoch + 1) % Config.VAL_EPOCHS == 0:
@@ -122,13 +122,13 @@ class Train:
             filename (str): Name of the file to save the checkpoint.
             path (str): Path to save the checkpoint.
         """
-        if Config.LOGS_FOLDER is None:
+        if self.output_dir is None:
             return
 
         if path is None:
             if filename is None:
                 return
-            checkpoint_path = os.path.join(Config.LOGS_FOLDER, filename)
+            checkpoint_path = os.path.join(self.output_dir, filename)
         else:
             checkpoint_path = path
 

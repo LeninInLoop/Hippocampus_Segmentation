@@ -40,27 +40,6 @@ def get_optimizer(model):
     raise ValueError(f"Unsupported optimizer: {Config.OPTIMIZER}")
 
 
-def setup_data_loaders():
-    """Set up and return data loaders."""
-    hippocampus_strategy = VanderbiltHippocampusDatasetStrategy()
-    hippocampus_factory = DefaultDataLoaderFactory(
-        dataset_strategy=hippocampus_strategy,
-        transform=train_transform,
-        train_ratio=Config.TRAIN_RATIO,
-        test_ratio=Config.TRAIN_RATIO,
-        val_ratio=Config.VAL_RATIO,
-        batch_size=Config.BATCH_SIZE,
-        num_workers=Config.NUM_WORKERS
-    )
-    hippocampus_loader = DataSetLoader(hippocampus_factory)
-
-    return (
-        hippocampus_loader.get_train_loader(),
-        hippocampus_loader.get_val_loader(),
-        hippocampus_loader.get_test_loader()
-    )
-
-
 def main():
     # Setup device
     if not Config.USE_GPU:
@@ -83,7 +62,7 @@ def main():
     model = initialize_model(device)
     optimizer = get_optimizer(model)
 
-    # Setup data loader factory
+    # Setup data loader strategy
     hippocampus_strategy = VanderbiltHippocampusDatasetStrategy()
 
     if Config.USE_KFOLD:
@@ -92,9 +71,10 @@ def main():
             transform=train_transform,
             k_folds=Config.NUM_OF_FOLDS,
             batch_size=Config.BATCH_SIZE,
-            num_workers=Config.NUM_WORKERS
+            num_workers=Config.NUM_WORKERS,
+            test_ratio=Config.TEST_RATIO
         )
-        strategy = KFoldTrainingStrategy(data_loader_factory)
+        training_strategy = KFoldTrainingStrategy(data_loader_factory)
     else:
         data_loader_factory = DefaultDataLoaderFactory(
             dataset_strategy=hippocampus_strategy,
@@ -105,24 +85,38 @@ def main():
             batch_size=Config.BATCH_SIZE,
             num_workers=Config.NUM_WORKERS
         )
-        strategy = StandardTrainingStrategy(data_loader_factory)
+        training_strategy = StandardTrainingStrategy(data_loader_factory)
 
     # Execute training
-    val_results, final_results = strategy.execute(model, device, optimizer)
+    val_results, final_results = training_strategy.execute(model, device, optimizer)
 
     # Process results
-    if isinstance(val_results, list):
-        # K-fold results
+    if Config.USE_KFOLD:
         print("K-fold cross-validation results:")
         for i, result in enumerate(val_results):
-            print(f"Fold {i + 1}: {result}")
-        print(f"Average performance: {sum(val_results) / len(val_results)}")
+            print(f"Fold {i + 1}:")
+            for metric, value in result.items():
+                print(f"  {metric}: {value}")
+
+        print("\nFinal test results:")
+        for i, result in enumerate(final_results[0]):  # final_results[0] contains individual fold results
+            print(f"Fold {i + 1}:")
+            for metric, value in result.items():
+                print(f"  {metric}: {value}")
+
+        print("\nAverage test results across all folds:")
+        for metric, value in final_results[1].items():  # final_results[1] contains averaged results
+            print(f"  {metric}: {value}")
     else:
-        # Standard training result
-        print(f"Validation result: {val_results}")
+        print("Validation results:")
+        for metric, value in val_results.items():
+            print(f"  {metric}: {value}")
 
-    print(f"Final test result: {final_results}")
+        print("\nFinal test results:")
+        for metric, value in final_results.items():
+            print(f"  {metric}: {value}")
 
+    # Uncomment the following lines if you want to generate a model diagram
     # visualizer = UNet3DVisualizer(model)
     # visualizer.generate_diagram((16, 1, 48, 64, 48), filename="ModelDiagram", format="png")
 

@@ -4,13 +4,16 @@ from src.utils import *
 
 class Validation:
     @classmethod
-    def validate(cls, model, val_loader, device, is_test_dataset=False):
+    def validate(cls, model, val_loader, device, is_test_dataset=False, output_dir=None):
         print("Starting Validation...")
+
         model.eval()
         multi_dices = []
         all_labels = []
         all_predictions = []
-        output_dir = Config.TEST_LOGS_FOLDER if is_test_dataset else Config.LOGS_FOLDER
+
+        if output_dir is None:
+            output_dir = Config.TEST_LOGS_FOLDER if is_test_dataset else Config.LOGS_FOLDER
 
         with torch.no_grad():
             for batch_idx, (inputs, labels) in enumerate(tqdm(val_loader, desc="Validation")):
