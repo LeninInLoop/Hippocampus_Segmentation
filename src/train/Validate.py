@@ -206,7 +206,7 @@ class Validation:
         print(f"Confusion matrices saved as image: {img_path}")
 
     @classmethod
-    def load_and_validate(cls, model, model_path, val_loader, device, is_test_dataset=False):
+    def load_and_validate(cls, model, model_path, val_loader, device, is_test_dataset=False, output_dir=None):
         """
         Load a model from a checkpoint and perform validation.
 
@@ -216,10 +216,11 @@ class Validation:
             val_loader (DataLoader): DataLoader for the validation dataset.
             device (torch.device): The device to run the validation on.
             is_test_dataset (bool): Whether the dataset is testing dataset.
+            output_dir (str): Path to save the validation results.
 
         Returns:
             dict: A dictionary containing validation metrics.
         """
         model.load_state_dict(torch.load(model_path, map_location=device))
         model.to(device)
-        return cls.validate(model, val_loader, device, is_test_dataset)
+        return cls.validate(model, val_loader, device, is_test_dataset, output_dir)
