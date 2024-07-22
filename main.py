@@ -44,19 +44,37 @@ def print_fold_results(fold_num, results, is_test=False):
     result_type = "Test" if is_test else "Cross-Validation"
     print(f"\nFold {fold_num} {result_type} Results:")
     print("-" * 40)
-    print(f"Mean Multi-Dice: {results['mean_multi_dice']}")
-    print(f"Std Multi-Dice:  {results['std_multi_dice']}")
+
+    mean_dice_1, mean_dice_2 = results['mean_multi_dice']
+    std_dice_1, std_dice_2 = results['std_multi_dice']
+
+    print(f"Class 1: {mean_dice_1:.4f} +/- {std_dice_1:.4f}")
+    print(f"Class 2: {mean_dice_2:.4f} +/- {std_dice_2:.4f}")
+
+    mean_multi_dice = (mean_dice_1 + mean_dice_2) / 2
+    std_multi_dice = (std_dice_1 + std_dice_2) / 2
+
+    print(f"Mean Multi-Dice: {mean_multi_dice:.4f} +/- {std_multi_dice:.4f}")
     print(f"Accuracy: {results['accuracy']:.4f}")
 
 
 def print_average_results(results):
     print("\nAverage Test Results Across All Folds:")
     print("=" * 40)
-    print(f"Mean Multi-Dice: {results['mean_multi_dice']}")
-    print(f"Std Multi-Dice:  {results['std_multi_dice']}")
+
+    mean_dice_1, mean_dice_2 = results['mean_multi_dice']
+    std_dice_1, std_dice_2 = results['std_multi_dice']
+
+    print(f"Class 1: {mean_dice_1:.4f} +/- {std_dice_1:.4f}")
+    print(f"Class 2: {mean_dice_2:.4f} +/- {std_dice_2:.4f}")
+
+    mean_multi_dice = (mean_dice_1 + mean_dice_2) / 2
+    std_multi_dice = (std_dice_1 + std_dice_2) / 2
+
+    print(f"Mean Multi-Dice: {mean_multi_dice:.4f} +/- {std_multi_dice:.4f}")
     print(f"Accuracy: {results['accuracy']:.4f}")
     print(f"Overall Mean Dice: {results['overall_mean_dice']:.4f}")
-    print(f"Overall Std Dice:  {results['overall_std_dice']:.4f}")
+    print(f"Overall Std Dice: {results['overall_std_dice']:.4f}")
 
 
 def main():
