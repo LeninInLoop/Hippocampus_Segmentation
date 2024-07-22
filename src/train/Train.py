@@ -22,8 +22,8 @@ class Train:
         self.train_loader = train_loader
         self.val_loader = val_loader
         self.optimizer = optimizer
-        self._create_output_dir()
         self.output_dir = output_dir
+        self._create_output_dir()
 
     def _create_output_dir(self):
         """Create a folder for storing logs and checkpoints if it doesn't exist."""

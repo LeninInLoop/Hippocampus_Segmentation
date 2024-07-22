@@ -188,6 +188,8 @@ class KFoldTrainingStrategy(TrainingStrategy):
             optimizer: The optimizer to use for training.
         """
         for fold in range(self.data_loader_factory.k_folds):
+            print(f"Fold {self.data_loader_factory.current_fold + 1}/{self.data_loader_factory.k_folds}")
+            print()
             fold_dir = os.path.join(Config.LOGS_FOLDER, f'fold{fold + 1}')
             os.makedirs(fold_dir, exist_ok=True)
 
@@ -197,6 +199,7 @@ class KFoldTrainingStrategy(TrainingStrategy):
             trainer = Train(model, device, train_loader, val_loader, optimizer, output_dir=fold_dir)
             trainer.start_training()
 
+            self.validate(model, device)
             self.data_loader_factory.next_fold()
 
     def validate(self, model, device):

@@ -15,7 +15,7 @@ class Config:
     BATCH_SIZE = 16
     NUM_WORKERS = 2
     NUM_EPOCHS = 20
-    VAL_EPOCHS = 4
+    VAL_EPOCHS = 5
     LEARNING_RATE = 0.01
 
     # Optimizer settings
