@@ -217,10 +217,10 @@ class KFoldTrainingStrategy(TrainingStrategy):
         val_loader = self.data_loader_factory.create_val_loader()
         result = Validation.load_and_validate(
             model=model,
-            model_path=Config.LOGS_FOLDER + f'fold{self.data_loader_factory.current_fold + 1}' + 'best_model.pth',
+            model_path=Config.LOGS_FOLDER + f'fold{self.data_loader_factory.current_fold + 1}' + '/best_model.pth',
             val_loader=val_loader,
             device=device,
-            output_dir=Config.LOGS_FOLDER + f'fold{self.data_loader_factory.current_fold + 1}' + 'best_model.pth',
+            output_dir=Config.LOGS_FOLDER + f'fold{self.data_loader_factory.current_fold + 1}',
         )
         self.fold_results.append(result)
         return result
