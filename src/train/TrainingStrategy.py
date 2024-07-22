@@ -241,6 +241,11 @@ class KFoldTrainingStrategy(TrainingStrategy):
         Returns:
             The average validation result across all folds.
         """
+        print()
+        print("\n" + "=" * 50)
+        print()
+        print(f"\t\tFinal Validation Using Test dataset")
+        print("\n" + "=" * 50)
         test_loader = self.data_loader_factory.create_test_loader()
         test_dir = os.path.join(Config.LOGS_FOLDER, 'test_results')
         os.makedirs(test_dir, exist_ok=True)
