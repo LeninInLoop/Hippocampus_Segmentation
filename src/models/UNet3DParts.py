@@ -131,10 +131,10 @@ def UpConvolutionalLayer(in_channels, out_channels):
     conv = nn.Sequential(
         nn.Conv3d(in_channels=in_channels, out_channels=out_channels, kernel_size=3, padding=1),
         nn.InstanceNorm3d(out_channels),
-        nn.LeakyReLU(inplace=False, negative_slope=Config.SLOPE_OF_LEAKY_RELU),
+        nn.PReLU(),
         nn.Conv3d(in_channels=out_channels, out_channels=out_channels, kernel_size=3, padding=1),
         nn.InstanceNorm3d(out_channels),
-        nn.LeakyReLU(inplace=False, negative_slope=Config.SLOPE_OF_LEAKY_RELU)
+        nn.LeakyReLU()
     )
     return conv
 

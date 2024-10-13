@@ -1,6 +1,7 @@
 from src.utils import *
 import torchio as tio
-from torchio import ZNormalization, Compose, TYPE, DATA, Subject
+from torchio import ZNormalization, Compose, TYPE, DATA, Subject, RandomAffine, RandomElasticDeformation, \
+    RandomNoise, RandomBlur
 from torchio.transforms import Lambda
 from src.data.Helper import get_pad_3d_image
 
@@ -57,7 +58,17 @@ class CustomCompose(Compose):
 # Define the transforms
 train_transforms_dict = {
     ZNormalization(): 1.0,
+    RandomAffine(): 0.05,
+    RandomElasticDeformation(max_displacement=3): 0.20,
+    RandomNoise(std=(0, 0.1)): 0.10,
+    RandomBlur(std=(0, 0.1)): 0.10,
+    LambdaChannel(get_pad_3d_image(pad_ref=Config.PADDING_TARGET_SHAPE, zero_pad=False)): 1.0,
+}
+
+validation_transforms_dict = {
+    ZNormalization(): 1.0,
     LambdaChannel(get_pad_3d_image(pad_ref=Config.PADDING_TARGET_SHAPE, zero_pad=False)): 1.0,
 }
 
 train_transform = CustomCompose(train_transforms_dict)
+validation_transform = CustomCompose(validation_transforms_dict)

@@ -105,7 +105,9 @@ def main():
     if Config.USE_KFOLD:
         data_loader_factory = KFoldDataLoaderFactory(
             dataset_strategy=hippocampus_strategy,
-            transform=train_transform,
+            train_transform=train_transform,
+            val_transform=validation_transform,
+            test_transform=validation_transform,
             k_folds=Config.NUM_OF_FOLDS,
             batch_size=Config.BATCH_SIZE,
             num_workers=Config.NUM_WORKERS,
@@ -115,7 +117,9 @@ def main():
     else:
         data_loader_factory = DefaultDataLoaderFactory(
             dataset_strategy=hippocampus_strategy,
-            transform=train_transform,
+            train_transform=train_transform,
+            val_transform=validation_transform,
+            test_transform=validation_transform,
             train_ratio=Config.TRAIN_RATIO,
             val_ratio=Config.VAL_RATIO,
             test_ratio=Config.TEST_RATIO,

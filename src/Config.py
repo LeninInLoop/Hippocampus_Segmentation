@@ -1,7 +1,7 @@
 class Config:
     # Data paths
-    VANDERBILT_DATA_DIR = r'C:\Users\Adib\PycharmProjects\Hippocampus_Segmentation\dataset'
-    VANDERBILT_DATA_JSON = VANDERBILT_DATA_DIR + r"\dataset.json"
+    VANDERBILT_DATA_DIR = r'./dataset/Task04_Hippocampus'
+    VANDERBILT_DATA_JSON = VANDERBILT_DATA_DIR + r"/dataset.json"
 
     # Model
     SLOPE_OF_LEAKY_RELU = 0.01
@@ -12,10 +12,10 @@ class Config:
     TRAIN_RATIO = 0.6
     VAL_RATIO = 0.2
     TEST_RATIO = 0.2
-    BATCH_SIZE = 16
+    BATCH_SIZE = 8
     NUM_WORKERS = 2
-    NUM_EPOCHS = 20
-    VAL_EPOCHS = 5
+    NUM_EPOCHS = 40
+    VAL_EPOCHS = 40
     LEARNING_RATE = 0.01
 
     # Optimizer settings
@@ -30,6 +30,6 @@ class Config:
     USE_GPU_WITH_MORE_COMPUTE_CAPABILITY = False
 
     # Model saving
-    BEST_MODEL_SAVE_PATH = r".\Output\best_model.pth"
-    LOGS_FOLDER = r".\Output\logs"
-    TEST_LOGS_FOLDER = LOGS_FOLDER + r"\Test"
+    BEST_MODEL_SAVE_PATH = r"./Output/best_model.pth"
+    LOGS_FOLDER = r"./Output/logs"
+    TEST_LOGS_FOLDER = LOGS_FOLDER + r"/Test"

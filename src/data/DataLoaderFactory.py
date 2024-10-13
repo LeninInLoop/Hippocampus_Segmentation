@@ -40,7 +40,8 @@ class DataLoaderFactory(ABC):
 
 
 class DefaultDataLoaderFactory(DataLoaderFactory):
-    def __init__(self, dataset_strategy, transform, train_ratio, val_ratio, test_ratio, batch_size, num_workers):
+    def __init__(self, dataset_strategy, train_transform, val_transform, test_transform, train_ratio, val_ratio,
+                 test_ratio, batch_size, num_workers):
         """
         Initialize the DefaultDataLoaderFactory.
 
@@ -54,15 +55,18 @@ class DefaultDataLoaderFactory(DataLoaderFactory):
             num_workers (int): The number of subprocesses to use for data loading.
         """
         self.dataset_strategy = dataset_strategy
-        self.transform = transform
+        self.train_transform = train_transform
+        self.val_transform = val_transform
+        self.test_transform = test_transform
         self.train_ratio = train_ratio
         self.val_ratio = val_ratio
         self.test_ratio = test_ratio
         self.batch_size = batch_size
         self.num_workers = num_workers
 
-        self.full_dataset = self.dataset_strategy.create_dataset(self.transform)
-        self.train_dataset, self.val_dataset, self.test_dataset = self._split_dataset(self.full_dataset)
+        # Create full dataset without transform
+        self.full_dataset = self.dataset_strategy.create_dataset(transform=None)
+        self.train_indices, self.val_indices, self.test_indices = self._split_dataset(self.full_dataset)
 
     def _split_dataset(self, dataset):
         """
@@ -77,7 +81,7 @@ class DefaultDataLoaderFactory(DataLoaderFactory):
         test_size = total_size - train_size - val_size
         return random_split(dataset, [train_size, val_size, test_size])
 
-    def _create_data_loader(self, dataset, shuffle):
+    def _create_data_loader(self, dataset, transform, shuffle):
         """
         Create a DataLoader with the specified parameters.
 
@@ -88,8 +92,9 @@ class DefaultDataLoaderFactory(DataLoaderFactory):
         Returns:
             A DataLoader object.
         """
+        transformed_dataset = self.dataset_strategy.create_dataset(transform=transform)
         return DataLoader(
-            dataset,
+            transformed_dataset,
             batch_size=self.batch_size,
             shuffle=shuffle,
             num_workers=self.num_workers
@@ -102,7 +107,7 @@ class DefaultDataLoaderFactory(DataLoaderFactory):
         Returns:
             A DataLoader object for the training dataset.
         """
-        return self._create_data_loader(self.train_dataset, shuffle=True)
+        return self._create_data_loader(self.train_dataset, transform=self.train_transform, shuffle=True)
 
     def create_val_loader(self):
         """
@@ -111,7 +116,7 @@ class DefaultDataLoaderFactory(DataLoaderFactory):
         Returns:
             A DataLoader object for the validation dataset.
         """
-        return self._create_data_loader(self.val_dataset, shuffle=True)
+        return self._create_data_loader(self.val_dataset, transform=self.val_transform, shuffle=False)
 
     def create_test_loader(self):
         """
@@ -120,7 +125,7 @@ class DefaultDataLoaderFactory(DataLoaderFactory):
         Returns:
             A DataLoader object for the validation dataset.
         """
-        return self._create_data_loader(self.test_dataset, shuffle=True)
+        return self._create_data_loader(self.test_dataset, transform=self.test_transform, shuffle=False)
 
 
 class KFoldDataLoaderFactory(DataLoaderFactory):
@@ -129,8 +134,7 @@ class KFoldDataLoaderFactory(DataLoaderFactory):
     This class prepares the dataset for k-fold cross-validation and provides methods to create
     train and validation data loaders for each fold.
     """
-
-    def __init__(self, dataset_strategy, transform, k_folds, batch_size, num_workers, test_ratio=Config.TEST_RATIO):
+    def __init__(self, dataset_strategy, train_transform, val_transform, test_transform, k_folds, batch_size, num_workers, test_ratio=Config.TEST_RATIO):
         """
         Initialize the KFoldDataLoaderFactory.
 
@@ -141,15 +145,20 @@ class KFoldDataLoaderFactory(DataLoaderFactory):
             batch_size (int): Batch size for data loaders.
             num_workers (int): Number of worker processes for data loading.
         """
-        self.dataset = dataset_strategy.create_dataset(transform)
+        self.dataset_strategy = dataset_strategy
+        self.train_transform = train_transform
+        self.val_transform = val_transform
+        self.test_transform = test_transform
         self.k_folds = k_folds
         self.batch_size = batch_size
         self.num_workers = num_workers
         self.current_fold = 0
         self.folds = None
-        train_val_size = int((1 - test_ratio) * len(self.dataset))
-        test_size = len(self.dataset) - train_val_size
-        self.train_val_dataset, self.test_dataset = random_split(self.dataset, [train_val_size, test_size])
+        self.full_dataset = self.dataset_strategy.create_dataset(transform=None)
+        train_val_size = int((1 - test_ratio) * len(self.full_dataset))
+        test_size = len(self.full_dataset) - train_val_size
+        self.train_val_dataset, self.test_dataset = random_split(self.full_dataset, [train_val_size, test_size])
+        self.prepare_folds()
 
     def prepare_folds(self):
         """
@@ -159,6 +168,12 @@ class KFoldDataLoaderFactory(DataLoaderFactory):
         kfold = KFold(n_splits=self.k_folds, shuffle=True, random_state=42)
         self.folds = list(kfold.split(self.train_val_dataset))
 
+    def _create_data_loader(self, dataset, transform, indices):
+        transformed_dataset = self.dataset_strategy.create_dataset(transform=transform)
+        sampler = SubsetRandomSampler(indices)
+        return DataLoader(transformed_dataset, batch_size=self.batch_size, sampler=sampler,
+                          num_workers=self.num_workers)
+
     def create_train_loader(self):
         """
         Create a DataLoader for the training data of the current fold.
@@ -167,8 +182,7 @@ class KFoldDataLoaderFactory(DataLoaderFactory):
             DataLoader: A DataLoader for the training data.
         """
         train_indices, _ = self.folds[self.current_fold]
-        train_sampler = SubsetRandomSampler(train_indices)
-        return DataLoader(self.train_val_dataset, batch_size=self.batch_size, sampler=train_sampler, num_workers=self.num_workers)
+        return self._create_data_loader(self.train_val_dataset, transform=self.train_transform, indices=train_indices)
 
     def create_val_loader(self):
         """
@@ -178,8 +192,7 @@ class KFoldDataLoaderFactory(DataLoaderFactory):
             DataLoader: A DataLoader for the validation data.
         """
         _, val_indices = self.folds[self.current_fold]
-        val_sampler = SubsetRandomSampler(val_indices)
-        return DataLoader(self.train_val_dataset, batch_size=self.batch_size, sampler=val_sampler, num_workers=self.num_workers)
+        return self._create_data_loader(self.train_val_dataset, transform=self.val_transform, indices=val_indices)
 
     def create_test_loader(self):
         """
@@ -190,12 +203,8 @@ class KFoldDataLoaderFactory(DataLoaderFactory):
         Returns:
             DataLoader: A DataLoader for the test data.
         """
-        return DataLoader(
-            self.test_dataset,
-            batch_size=self.batch_size,
-            shuffle=False,
-            num_workers=self.num_workers
-        )
+        return self._create_data_loader(self.test_dataset, transform=self.test_transform,
+                                        indices=range(len(self.test_dataset)))
 
     def next_fold(self):
         """

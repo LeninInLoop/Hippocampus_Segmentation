@@ -18,7 +18,7 @@ class VanderbiltHippocampusDataset(Dataset):
         self._check_and_download_dataset(root_dir)
         self._load_json_data(json_file)
         self.root_dir = root_dir
-        self.transform = transform if transform is not None else train_transform
+        self.transform = transform
         self._extract_image_and_label_paths()
 
     @staticmethod
